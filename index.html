@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Bee's Knees 🐝</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --honey:      #F5A623;
+      --deep-honey: #C67C00;
+      --amber:      #E8830A;
+      --comb:       #FFF3D4;
+      --comb-dark:  #FFE5A0;
+      --comb-mid:   #FFDД70;
+      --dark:       #1A1000;
+      --mid:        #4A3200;
+      --soft:       #7A5C1E;
+      --white:      #FFFDF5;
+      --shadow:     rgba(90,50,0,0.15);
+      --mention-bg: #FFF8E6;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--comb);
+      color: var(--dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Honeycomb SVG tiled background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 0 L56 16 L56 48 L28 64 L0 48 L0 16Z' fill='none' stroke='%23F5A623' stroke-width='0.6' stroke-opacity='0.18'/%3E%3Cpath d='M28 64 L56 80 L56 100' fill='none' stroke='%23F5A623' stroke-width='0.6' stroke-opacity='0.18'/%3E%3Cpath d='M28 64 L0 80 L0 100' fill='none' stroke='%23F5A623' stroke-width='0.6' stroke-opacity='0.18'/%3E%3C/svg%3E"),
+        radial-gradient(ellipse at 15% 0%,   rgba(245,166,35,0.16) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 100%, rgba(200,120,0,0.11)  0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 5rem;
+    }
+
+    /* ── Header ── */
+    header { text-align: center; margin-bottom: 2.5rem; }
+
+    .hive-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 0.5rem;
+    }
+
+    .bee-main {
+      font-size: 3.8rem;
+      display: inline-block;
+      animation: bob 3s ease-in-out infinite;
+      filter: drop-shadow(0 4px 8px rgba(200,120,0,0.3));
+    }
+
+    @keyframes bob {
+      0%,100% { transform: translateY(0) rotate(-6deg); }
+      50%      { transform: translateY(-10px) rotate(6deg); }
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.1rem, 7vw, 3rem);
+      font-weight: 900;
+      color: var(--deep-honey);
+      line-height: 1.05;
+      letter-spacing: -0.5px;
+    }
+
+    .tagline {
+      font-size: 0.88rem;
+      color: var(--soft);
+      margin-top: 0.45rem;
+      font-style: italic;
+      letter-spacing: 0.01em;
+    }
+
+    .honey-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin: 0.6rem auto 0;
+      font-size: 0.75rem;
+      color: var(--honey);
+      opacity: 0.7;
+      letter-spacing: 0.15em;
+    }
+
+    /* ── Search card ── */
+    .card {
+      background: var(--white);
+      border-radius: 28px;
+      padding: 1.75rem 1.5rem;
+      box-shadow: 0 6px 40px var(--shadow), 0 1px 0 rgba(255,255,255,0.9) inset;
+      border: 1.5px solid rgba(245,166,35,0.22);
+    }
+
+    .label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--soft);
+      margin-bottom: 0.55rem;
+    }
+
+    .input-group { margin-bottom: 1.2rem; }
+
+    .input-row { display: flex; gap: 0.5rem; }
+
+    input[type="text"] {
+      flex: 1;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      padding: 0.72rem 1rem;
+      border: 1.5px solid var(--comb-dark);
+      border-radius: 14px;
+      background: var(--comb);
+      color: var(--dark);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--honey);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.2);
+    }
+    input[type="text"]::placeholder { color: #C09A50; }
+
+    .gps-btn {
+      background: var(--comb);
+      border: 1.5px solid var(--comb-dark);
+      border-radius: 14px;
+      padding: 0.72rem 0.95rem;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: background 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .gps-btn:hover { background: var(--comb-dark); border-color: var(--honey); }
+
+    /* ── Category pills ── */
+    .pill-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.7rem 0.3rem;
+      border-radius: 16px;
+      border: 1.5px solid var(--comb-dark);
+      background: var(--comb);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--soft);
+      transition: all 0.18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pill .icon { font-size: 1.35rem; }
+    .pill:hover { border-color: var(--honey); background: #FFF8E6; color: var(--deep-honey); }
+    .pill.active {
+      background: linear-gradient(145deg, var(--honey), var(--amber));
+      border-color: var(--amber);
+      color: var(--dark);
+      box-shadow: 0 3px 14px rgba(245,166,35,0.45);
+      transform: translateY(-2px);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin: 1.1rem 0;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--soft);
+      opacity: 0.7;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--comb-dark);
+    }
+
+    /* ── Distance ── */
+    .distance-row { display: flex; gap: 0.4rem; margin-bottom: 1.5rem; }
+
+    .dist-btn {
+      flex: 1;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.52rem 0;
+      border-radius: 10px;
+      border: 1.5px solid var(--comb-dark);
+      background: var(--comb);
+      color: var(--soft);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .dist-btn:hover { border-color: var(--honey); color: var(--deep-honey); }
+    .dist-btn.active { background: var(--deep-honey); border-color: var(--deep-honey); color: #fff; }
+
+    /* ── Search button ── */
+    .search-btn {
+      width: 100%;
+      padding: 1rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--dark);
+      background: linear-gradient(135deg, var(--honey) 0%, var(--amber) 100%);
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 22px rgba(200,120,0,0.38), 0 1px 0 rgba(255,255,255,0.45) inset;
+      transition: transform 0.15s, box-shadow 0.15s;
+      letter-spacing: 0.01em;
+    }
+    .search-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 30px rgba(200,120,0,0.48); }
+    .search-btn:active { transform: translateY(0); }
+    .search-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    /* ── Status ── */
+    .status { text-align: center; margin-top: 1.75rem; }
+
+    .buzz-msg {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--white);
+      border: 1.5px solid var(--comb-dark);
+      border-radius: 50px;
+      padding: 0.75rem 1.3rem;
+      font-size: 0.92rem;
+      color: var(--soft);
+      box-shadow: 0 3px 14px var(--shadow);
+    }
+    .buzz-bee { animation: bob 1s ease-in-out infinite; display: inline-block; }
+
+    .error-msg {
+      background: #FFF0F0;
+      border: 1.5px solid #FFCCCC;
+      border-radius: 14px;
+      padding: 0.85rem 1.1rem;
+      color: #CC3300;
+      font-size: 0.88rem;
+    }
+
+    /* ── Results section ── */
+    .results { margin-top: 2rem; }
+
+    .results-heading {
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+    .results-heading h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: var(--deep-honey);
+    }
+    .results-heading p {
+      font-size: 0.78rem;
+      color: var(--soft);
+      margin-top: 0.2rem;
+    }
+
+    /* ── Top 3 podium cards ── */
+    .podium { display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 1.5rem; }
+
+    .result-card {
+      background: var(--white);
+      border-radius: 22px;
+      padding: 1.2rem 1.2rem 1.2rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      box-shadow: 0 3px 22px var(--shadow);
+      border: 1.5px solid rgba(245,166,35,0.18);
+      animation: slideUp 0.4s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Gold shimmer strip on #1 */
+    .result-card.rank-1 {
+      border-color: rgba(245,166,35,0.5);
+      box-shadow: 0 4px 28px rgba(200,120,0,0.22);
+    }
+    .result-card.rank-1::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--honey), var(--amber), var(--honey));
+    }
+
+    .result-card:nth-child(1) { animation-delay: 0.05s; }
+    .result-card:nth-child(2) { animation-delay: 0.15s; }
+    .result-card:nth-child(3) { animation-delay: 0.25s; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .medal { font-size: 2.3rem; flex-shrink: 0; line-height: 1; margin-top: 0.05rem; }
+
+    .result-info { flex: 1; min-width: 0; }
+
+    .result-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 0.3rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--soft);
+      margin-bottom: 0.55rem;
+    }
+    .stars { color: var(--amber); font-weight: 700; }
+
+    .dual-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--deep-honey);
+      background: rgba(245,166,35,0.13);
+      border: 1px solid rgba(245,166,35,0.35);
+      border-radius: 6px;
+      padding: 0.12rem 0.45rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .hive-score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--white);
+      background: linear-gradient(135deg, var(--amber), var(--deep-honey));
+      border-radius: 20px;
+      padding: 0.18rem 0.7rem;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
+      box-shadow: 0 2px 6px rgba(200,120,0,0.3);
+    }
+
+    .hive-score-gold {
+      background: linear-gradient(135deg, #FFD700, #E8830A, #C67C00);
+      box-shadow: 0 2px 10px rgba(255,215,0,0.5);
+      font-size: 0.76rem;
+      padding: 0.22rem 0.8rem;
+    }
+
+    .hours-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 0.18rem 0.55rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .hours-open {
+      background: rgba(34, 160, 80, 0.12);
+      color: #1a7a40;
+      border: 1px solid rgba(34, 160, 80, 0.25);
+    }
+
+    .hours-closed {
+      background: rgba(200, 40, 40, 0.1);
+      color: #b02020;
+      border: 1px solid rgba(200, 40, 40, 0.2);
+    }
+
+    .hours-unknown {
+      background: rgba(120, 90, 30, 0.1);
+      color: var(--soft);
+      border: 1px solid var(--comb-dark);
+    }
+
+    .result-description {
+      font-size: 0.78rem;
+      color: var(--soft);
+      font-style: italic;
+      margin-bottom: 0.45rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mention-description {
+      font-size: 0.72rem;
+      color: var(--soft);
+      font-style: italic;
+      margin-top: 0.1rem;
+    }
+
+    .maps-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--deep-honey);
+      text-decoration: none;
+      border: 1.5px solid var(--comb-dark);
+      border-radius: 8px;
+      padding: 0.28rem 0.65rem;
+      background: var(--comb);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .maps-link:hover { background: var(--comb-dark); border-color: var(--honey); }
+
+    /* ── Honourable mentions section ── */
+    .mentions-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.5rem 0 0.9rem;
+    }
+    .mentions-header::before, .mentions-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--comb-dark);
+    }
+    .mentions-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--soft);
+      white-space: nowrap;
+    }
+
+    .mentions { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .mention-card {
+      background: var(--mention-bg);
+      border-radius: 16px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      border: 1px dashed rgba(245,166,35,0.45);
+      animation: slideUp 0.4s ease both;
+    }
+    .mention-card:nth-child(1) { animation-delay: 0.35s; }
+    .mention-card:nth-child(2) { animation-delay: 0.45s; }
+
+    .mention-icon { font-size: 1.6rem; flex-shrink: 0; }
+
+    .mention-info { flex: 1; min-width: 0; }
+
+    .mention-name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--mid);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mention-meta {
+      font-size: 0.75rem;
+      color: var(--soft);
+      margin-top: 0.15rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .mention-link {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--deep-honey);
+      text-decoration: none;
+      border: 1px solid var(--comb-dark);
+      border-radius: 6px;
+      padding: 0.18rem 0.5rem;
+      background: var(--white);
+      flex-shrink: 0;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .mention-link:hover { background: var(--comb-dark); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--soft);
+    }
+    .footer-main { opacity: 0.6; margin-bottom: 0.35rem; }
+    .footer-copy {
+      font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--deep-honey);
+      opacity: 0.9;
+    }
+    .footer-copy::before { content: "🐝 "; }
+
+    /* ── Responsive ── */
+    @media (max-width: 380px) {
+      .pill-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+
+  <header>
+    <div class="hive-logo">
+      <span class="bee-main">🐝</span>
+    </div>
+    <h1>The Bee's Knees</h1>
+    <p class="tagline">The hive knows best — find your top spot instantly</p>
+    <div class="honey-divider">✦ &nbsp; ✦ &nbsp; ✦</div>
+  </header>
+
+  <div class="card">
+
+    <div class="input-group">
+      <div class="label">🍯 Your Location</div>
+      <div class="input-row">
+        <input type="text" id="location-input" placeholder="Postcode, town or street…" />
+        <button class="gps-btn" id="gps-btn" title="Use my location">📡</button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <div class="label">🔍 What are you after?</div>
+      <input type="text" id="query-input" placeholder="e.g. Pizza, Chinese, Indian, Coffee…" />
+    </div>
+
+    <div class="label">⚡ Quick Categories</div>
+    <div class="pill-grid" id="pill-grid">
+      <button class="pill" data-query="takeaway food">
+        <span class="icon">🥡</span>Takeaway
+      </button>
+      <button class="pill" data-query="pub bar">
+        <span class="icon">🍺</span>Pub
+      </button>
+      <button class="pill" data-query="restaurant dining">
+        <span class="icon">🍽️</span>Restaurant
+      </button>
+      <button class="pill" data-query="gym fitness">
+        <span class="icon">💪</span>Gym
+      </button>
+      <button class="pill" data-query="car mechanic garage">
+        <span class="icon">🔧</span>Mechanic
+      </button>
+      <button class="pill" data-query="cafe coffee shop">
+        <span class="icon">☕</span>Cafe
+      </button>
+    </div>
+
+    <div class="divider">🍯 search radius</div>
+
+    <div class="distance-row" id="dist-row">
+      <button class="dist-btn" data-radius="1000">1 km</button>
+      <button class="dist-btn active" data-radius="3000">3 km</button>
+      <button class="dist-btn" data-radius="5000">5 km</button>
+      <button class="dist-btn" data-radius="10000">10 km</button>
+    </div>
+
+    <button class="search-btn" id="search-btn">🐝 Scout the Hive</button>
+  </div>
+
+  <div class="status" id="status" style="display:none"></div>
+  <div class="results" id="results"></div>
+
+</div>
+
+<footer>
+  <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
+  <div class="footer-copy">&copy; 2025 SammassimoDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
+</footer>
+
+<script>
+// ── Config ────────────────────────────────────────────────────
+const API_BASE       = "http://localhost:3000";
+const GOOGLE_API_KEY = "AIzaSyBodEo-Lbzg2al-4_nmLTXBFSW4VrS4nfI";
+
+// ── State ─────────────────────────────────────────────────────
+let userLat = null, userLng = null;
+let selectedRadius = 3000;
+let selectedQuery  = "";
+
+const MEDALS           = ["🥇", "🥈", "🥉"];
+const MENTION_ICONS    = ["🌸", "🌼"];
+const MENTION_LABELS   = ["Worthy of the Waggle Dance", "Almost Royal Jelly"];
+
+// ── DOM refs ──────────────────────────────────────────────────
+const locationInput = document.getElementById("location-input");
+const queryInput    = document.getElementById("query-input");
+const gpsBtn        = document.getElementById("gps-btn");
+const searchBtn     = document.getElementById("search-btn");
+const statusDiv     = document.getElementById("status");
+const resultsDiv    = document.getElementById("results");
+
+// ── GPS ───────────────────────────────────────────────────────
+gpsBtn.addEventListener("click", () => {
+  if (!navigator.geolocation) return showError("Geolocation not supported.");
+  gpsBtn.textContent = "⏳";
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      locationInput.value = `📡 GPS (${userLat.toFixed(4)}, ${userLng.toFixed(4)})`;
+      gpsBtn.textContent = "✅";
+    },
+    () => {
+      showError("Couldn't get GPS location. Try typing your location.");
+      gpsBtn.textContent = "📡";
+    }
+  );
+});
+
+// ── Category pills ────────────────────────────────────────────
+document.getElementById("pill-grid").addEventListener("click", (e) => {
+  const pill = e.target.closest(".pill");
+  if (!pill) return;
+  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  pill.classList.add("active");
+  selectedQuery    = pill.dataset.query;
+  queryInput.value = "";
+  queryInput.placeholder = pill.querySelector(".icon").textContent + " " + pill.textContent.trim().replace(/^\S+\s*/,"");
+});
+
+queryInput.addEventListener("input", () => {
+  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  selectedQuery = "";
+});
+
+// ── Distance buttons ──────────────────────────────────────────
+document.getElementById("dist-row").addEventListener("click", (e) => {
+  const btn = e.target.closest(".dist-btn");
+  if (!btn) return;
+  document.querySelectorAll(".dist-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  selectedRadius = parseInt(btn.dataset.radius);
+});
+
+// ── Geocode via Google — handles UK postcodes perfectly ───────
+async function geocodeLocation(text) {
+  const url  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&region=gb&key=${GOOGLE_API_KEY}`;
+  const res  = await fetch(url);
+  const data = await res.json();
+
+  if (data.status === "REQUEST_DENIED")
+    throw new Error("Geocoding API not enabled — check console.cloud.google.com → APIs → Geocoding API.");
+
+  if (data.status !== "OK" || !data.results.length)
+    throw new Error(`Couldn't find "${text}". Try your full postcode e.g. "BT20 4AB".`);
+
+  const { lat, lng } = data.results[0].geometry.location;
+  console.log(`📍 ${text} → ${data.results[0].formatted_address} (${lat}, ${lng})`);
+  return { lat, lng };
+}
+
+// ── Hive Score™ (mirrors server formula exactly) ─────────────
+const HIVE_SCORE_MAX = (Math.pow(5.0, 2.5) * Math.log10(1010)) * 1.05;
+
+function calcHiveScore(rating, reviews, dualSource) {
+  const base = Math.pow(rating, 2.5) * Math.log10(Math.min(reviews, 1000) + 10);
+  const raw  = base * (dualSource ? 1.05 : 1.0);
+  return Math.min(Math.round((raw / HIVE_SCORE_MAX) * 100 * 10) / 10, 100);
+}
+
+function scoreAndSort(rawPlaces) {
+  return [...rawPlaces]
+    .filter(p => p.rating != null && p.rating > 0)
+    .map(p => ({
+      ...p,
+      hive_score: p.hive_score ?? calcHiveScore(
+        p.rating,
+        p.review_count || p.user_ratings_total || 0,
+        p.sources?.length > 1
+      )
+    }))
+    .sort((a, b) => b.hive_score - a.hive_score);
+}
+
+// ── Search ────────────────────────────────────────────────────
+searchBtn.addEventListener("click", async () => {
+  const query = queryInput.value.trim() || selectedQuery;
+  if (!query) return showError("Please enter what you're looking for, or tap a category.");
+
+  const locationText = locationInput.value.trim();
+
+  try {
+    if (!userLat || !userLng || !locationText.startsWith("📡")) {
+      if (!locationText) return showError("Please enter a location or use GPS.");
+      showBuzz("Scouting your location… 🗺️");
+      const coords = await geocodeLocation(locationText);
+      userLat = coords.lat;
+      userLng = coords.lng;
+    }
+  } catch (err) {
+    return showError(err.message);
+  }
+
+  showBuzz("Buzzing around the hive for the best spots… 🐝");
+  searchBtn.disabled  = true;
+  resultsDiv.innerHTML = "";
+
+  try {
+    const url  = `${API_BASE}/google-places?lat=${userLat}&lng=${userLng}&query=${encodeURIComponent(query)}&radius=${selectedRadius}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Server error");
+    if (!data.results || data.results.length === 0) {
+      showError("No spots found nearby. Try a larger radius or different search. 🍯");
+      return;
+    }
+
+    renderResults(data.results, query);
+    statusDiv.style.display = "none";
+  } catch (err) {
+    showError("Couldn't reach the hive server. Make sure Docker is running. 🐝");
+    console.error(err);
+  } finally {
+    searchBtn.disabled = false;
+  }
+});
+
+// ── Render ────────────────────────────────────────────────────
+function renderResults(rawPlaces, query) {
+  resultsDiv.innerHTML = "";
+
+  // Definitive sort — highest score first
+  const sorted  = scoreAndSort(rawPlaces);
+  const top3    = sorted.slice(0, 3);
+  const honourable = sorted.slice(3, 5);
+
+  // Heading
+  const heading = document.createElement("div");
+  heading.className = "results-heading";
+  heading.innerHTML = `
+    <h2>🏆 The Best ${capitalise(query)} Near You</h2>
+    <p>🍯 Top picks within ${(selectedRadius / 1000).toFixed(0)} km · Ranked by the hive</p>
+  `;
+  resultsDiv.appendChild(heading);
+
+  // Top 3 podium
+  const podium = document.createElement("div");
+  podium.className = "podium";
+
+  top3.forEach((place, i) => {
+    const card = document.createElement("div");
+    card.className = `result-card rank-${i + 1}`;
+
+    const reviews    = place.review_count || place.user_ratings_total || 0;
+    const reviewsStr = reviews ? `<span>${reviews.toLocaleString()} reviews</span>` : "";
+    const distStr    = place.distance_km != null ? `<span>📍 ${place.distance_km} km away</span>` : "";
+    const dualBadge  = place.sources?.length > 1
+      ? `<div class="dual-badge">🐝 Verified by both sources</div>` : "";
+
+    card.innerHTML = `
+      <div class="medal">${MEDALS[i]}</div>
+      <div class="result-info">
+        <div class="result-name" title="${escHtml(place.name)}">${escHtml(place.name)}</div>
+        <div class="result-meta">
+          <span class="stars">⭐ ${place.rating}</span>
+          ${reviewsStr}
+          ${distStr}
+        </div>
+        <div class="hive-score-badge${i === 0 ? ' hive-score-gold' : ''}">
+          ${i === 0 ? '👑 Golden Honey Pick · ' : '🍯 '}Hive Score: ${place.hive_score}/100
+        </div>
+        ${renderHours(place)}
+        ${dualBadge}
+        ${place.description ? `<div class="result-description">📌 ${escHtml(place.description)}</div>` : ""}
+        <a class="maps-link" href="${place.maps_url}" target="_blank" rel="noopener">🗺️ Open in Maps</a>
+      </div>
+    `;
+    podium.appendChild(card);
+  });
+
+  resultsDiv.appendChild(podium);
+
+  // Honourable mentions
+  if (honourable.length > 0) {
+    const mentionsHeader = document.createElement("div");
+    mentionsHeader.className = "mentions-header";
+    mentionsHeader.innerHTML = `<span class="mentions-label">🐝 Honourable Mentions from the Hive</span>`;
+    resultsDiv.appendChild(mentionsHeader);
+
+    const mentionsEl = document.createElement("div");
+    mentionsEl.className = "mentions";
+
+    honourable.forEach((place, i) => {
+      const card = document.createElement("div");
+      card.className = "mention-card";
+
+      const reviews    = place.review_count || place.user_ratings_total || 0;
+      const reviewsStr = reviews ? `<span>${reviews.toLocaleString()} reviews</span>` : "";
+      const distStr    = place.distance_km != null ? `<span>📍 ${place.distance_km} km</span>` : "";
+
+      card.innerHTML = `
+        <div class="mention-icon">${MENTION_ICONS[i]}</div>
+        <div class="mention-info">
+          <div class="mention-name" title="${escHtml(place.name)}">${escHtml(place.name)}</div>
+          <div class="mention-meta">
+            <span>⭐ ${place.rating}</span>
+            ${reviewsStr}
+            ${distStr}
+          </div>
+          ${place.description ? `<div class="mention-description">📌 ${escHtml(place.description)}</div>` : ""}
+          <div style="font-size:0.68rem;color:var(--soft);font-style:italic;margin-top:0.2rem;">${MENTION_LABELS[i]}</div>
+        </div>
+        <a class="mention-link" href="${place.maps_url}" target="_blank" rel="noopener">🗺️ Maps</a>
+      `;
+      mentionsEl.appendChild(card);
+    });
+
+    resultsDiv.appendChild(mentionsEl);
+  }
+}
+
+function renderHours(place) {
+  if (place.business_status === "PERMANENTLY_CLOSED") {
+    return `<div class="hours-tag hours-closed">🚫 Permanently closed</div>`;
+  }
+  if (place.business_status === "TEMPORARILY_CLOSED") {
+    return `<div class="hours-tag hours-closed">⚠️ Temporarily closed</div>`;
+  }
+  if (place.is_open_now === true) {
+    const closing = place.closing_time ? ` · Closes ${place.closing_time}` : "";
+    return `<div class="hours-tag hours-open">✅ Open now${closing}</div>`;
+  }
+  if (place.is_open_now === false) {
+    return `<div class="hours-tag hours-closed">🔴 Closed now</div>`;
+  }
+  return ""; // no hours data — show nothing
+}
+
+function capitalise(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+
+function escHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function showBuzz(msg) {
+  statusDiv.style.display = "block";
+  statusDiv.innerHTML = `
+    <div class="buzz-msg">
+      <span class="buzz-bee">🐝</span> ${msg}
+    </div>`;
+  resultsDiv.innerHTML = "";
+}
+
+function showError(msg) {
+  statusDiv.style.display = "block";
+  statusDiv.innerHTML = `<div class="error-msg">⚠️ ${escHtml(msg)}</div>`;
+  searchBtn.disabled = false;
+}
+</script>
+</body>
+</html>

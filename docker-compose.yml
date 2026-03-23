@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-AIzaSyBodEo-Lbzg2al-4_nmLTXBFSW4VrS4nfI}
+      - FOURSQUARE_API_KEY=${FOURSQUARE_API_KEY:-GKBKSLTO13YCILAF3ZTKQ2P0V3QCPAJQDOSJSVXUAK4W3IW5}
+    volumes:
+      - ./index.html:/app/public/index.html
+      - ./server.js:/app/server.js
