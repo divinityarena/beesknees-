@@ -66,65 +66,110 @@
       margin-bottom: 0.5rem;
     }
 
-    .bee-main {
-      font-size: 3.8rem;
-      display: inline-block;
-      animation: bob 3s ease-in-out infinite;
-      filter: drop-shadow(0 4px 8px rgba(200,120,0,0.3));
+    /* ── Hive logo layout ── */
+    .hive-logo {
+      position: relative;
+      display: inline-flex;
+      align-items: flex-end;
+      justify-content: center;
+      height: 80px;
+      width: 160px;
+      margin-bottom: 0.5rem;
     }
 
     .flower-wrap {
-      display: inline-block;
-      width: 0;
-      overflow: visible;
-      position: relative;
+      position: absolute;
+      left: 10px;
+      bottom: 0;
+      width: 52px;
+      height: 52px;
     }
 
     .flower {
       font-size: 3rem;
-      display: inline-block;
+      display: block;
       opacity: 0;
-      transform: scale(0) translateY(20px);
-      transition: none;
-      position: relative;
-      left: -0.2em;
+      transform: scale(0) rotate(-40deg);
+      transform-origin: bottom center;
     }
 
     .flower.bloom {
-      animation: flowerBloom 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: flowerBloom 0.7s cubic-bezier(0.34, 1.8, 0.64, 1) forwards;
+    }
+
+    .flower.unbloom {
+      animation: flowerUnbloom 0.4s ease-in forwards;
     }
 
     @keyframes flowerBloom {
-      0%   { opacity: 0; transform: scale(0) translateY(20px) rotate(-30deg); }
-      60%  { opacity: 1; transform: scale(1.15) translateY(-4px) rotate(5deg); }
-      100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+      0%   { opacity:0; transform: scale(0) rotate(-40deg); }
+      50%  { opacity:1; transform: scale(1.2) rotate(8deg); }
+      75%  { transform: scale(0.9) rotate(-4deg); }
+      100% { opacity:1; transform: scale(1) rotate(0deg); }
     }
 
+    @keyframes flowerUnbloom {
+      0%   { opacity:1; transform: scale(1) rotate(0deg); }
+      100% { opacity:0; transform: scale(0) rotate(-30deg); }
+    }
+
+    /* ── Bee ── */
     .bee-main {
-      display: inline-block;
-      position: relative;
-      transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      font-size: 3.8rem;
+      display: block;
+      position: absolute;
+      right: 10px;
+      bottom: 0;
+      filter: drop-shadow(0 4px 8px rgba(200,120,0,0.3));
+      transform-origin: center center;
+      animation: bob 3s ease-in-out infinite;
     }
 
-    .bee-main.landed {
-      animation: beeLand 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+    .bee-main.scouting {
+      animation: beeFlyOut 0.6s ease-in forwards !important;
     }
 
-    .bee-main.takeoff {
-      animation: beeTakeoff 0.5s ease forwards !important;
+    .bee-main.landing {
+      animation: beeLandOnFlower 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
     }
 
-    @keyframes beeLand {
-      0%   { transform: translateY(0) rotate(-5deg); }
-      40%  { transform: translateY(-30px) translateX(20px) rotate(20deg) scale(1.1); }
-      70%  { transform: translateY(8px) translateX(-30px) rotate(-10deg) scale(0.95); }
-      100% { transform: translateY(0) translateX(-32px) rotate(0deg) scale(1); }
+    .bee-main.sitting {
+      animation: beeSit 2s ease-in-out infinite !important;
     }
 
-    @keyframes beeTakeoff {
-      0%   { transform: translateY(0) translateX(-32px) rotate(0deg); }
-      50%  { transform: translateY(-20px) translateX(-10px) rotate(15deg); }
-      100% { transform: translateY(0) translateX(0) rotate(-5deg); }
+    .bee-main.returning {
+      animation: beeReturn 0.8s cubic-bezier(0.34, 1.4, 0.64, 1) forwards !important;
+    }
+
+    /* Bee flies up and away before results */
+    @keyframes beeFlyOut {
+      0%   { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+      30%  { transform: translate(-10px, -20px) rotate(-20deg) scale(1.05); }
+      100% { transform: translate(-80px, -60px) rotate(-35deg) scale(0.7); opacity: 0.6; }
+    }
+
+    /* Bee swoops in from above and lands on flower */
+    @keyframes beeLandOnFlower {
+      0%   { transform: translate(-80px, -60px) rotate(-35deg) scale(0.7); opacity: 0.6; }
+      20%  { transform: translate(-60px, -80px) rotate(-15deg) scale(0.85); opacity: 1; }
+      50%  { transform: translate(-70px, -30px) rotate(10deg) scale(1.1); }
+      70%  { transform: translate(-65px, 5px) rotate(-5deg) scale(0.95); }
+      85%  { transform: translate(-62px, -6px) rotate(3deg) scale(1.02); }
+      100% { transform: translate(-62px, 0px) rotate(0deg) scale(1); }
+    }
+
+    /* Gentle wiggle while sitting on flower */
+    @keyframes beeSit {
+      0%,100% { transform: translate(-62px, 0px) rotate(-3deg) scale(1); }
+      50%      { transform: translate(-62px, -4px) rotate(3deg) scale(1.03); }
+    }
+
+    /* Bee lifts off and returns to original position */
+    @keyframes beeReturn {
+      0%   { transform: translate(-62px, 0px) rotate(0deg) scale(1); }
+      30%  { transform: translate(-40px, -40px) rotate(20deg) scale(1.1); }
+      60%  { transform: translate(10px, -20px) rotate(-10deg) scale(1.05); }
+      100% { transform: translate(0, 0) rotate(0deg) scale(1); }
     }
 
     @keyframes bob {
@@ -817,27 +862,7 @@
 <div class="app">
 
   <nav style="display:flex; justify-content:flex-end; margin-bottom:0.75rem;">
-    <a href="about.html" style="
-      font-family:'Playfair Display',serif;
-      font-size:0.82rem;
-      font-weight:700;
-      font-style:italic;
-      color:var(--deep-honey);
-      text-decoration:none;
-      border:1.5px solid var(--honey);
-      border-radius:50px;
-      padding:0.45rem 1rem;
-      background:var(--white);
-      transition:all 0.2s;
-      box-shadow: 0 2px 10px rgba(200,120,0,0.15);
-      display:flex;
-      align-items:center;
-      gap:0.35rem;
-    "
-    onmouseover="this.style.background='var(--honey)';this.style.color='var(--dark)';this.style.boxShadow='0 4px 16px rgba(200,120,0,0.35)';this.style.transform='translateY(-1px)'"
-    onmouseout="this.style.background='var(--white)';this.style.color='var(--deep-honey)';this.style.boxShadow='0 2px 10px rgba(200,120,0,0.15)';this.style.transform='translateY(0)'">
-      <span style="font-size:1rem;font-style:normal;">🐝</span> <span style="font-family:'DM Sans',sans-serif;font-style:normal;font-weight:600;font-size:0.82rem;">Hive Info</span>
-    </a>
+    <a href="about.html" class="nav-pill">🐝 Hive Info</a>
   </nav>
 
   <header>
@@ -1149,14 +1174,36 @@ searchBtn.addEventListener("click", async () => {
   searchBtn.disabled  = true;
   resultsDiv.innerHTML = "";
 
-  // Bee lands on flower animation
+  // ── Bee & flower animation sequence ──
   const bee    = document.getElementById("header-bee");
   const flower = document.getElementById("header-flower");
-  flower.classList.remove("bloom");
-  bee.classList.remove("landed", "takeoff");
-  void flower.offsetWidth; // force reflow
-  flower.classList.add("bloom");
-  setTimeout(() => { bee.classList.add("landed"); }, 300);
+
+  // Reset everything
+  bee.classList.remove("scouting","landing","sitting","returning");
+  flower.classList.remove("bloom","unbloom");
+  void bee.offsetWidth;
+
+  // Step 1: bee flies out (0ms)
+  bee.classList.add("scouting");
+
+  // Step 2: flower blooms (400ms)
+  setTimeout(() => {
+    flower.classList.add("bloom");
+  }, 400);
+
+  // Step 3: bee swoops in and lands on flower (700ms)
+  setTimeout(() => {
+    bee.classList.remove("scouting");
+    void bee.offsetWidth;
+    bee.classList.add("landing");
+  }, 700);
+
+  // Step 4: bee sits and wiggles on flower
+  setTimeout(() => {
+    bee.classList.remove("landing");
+    void bee.offsetWidth;
+    bee.classList.add("sitting");
+  }, 1900);
 
   try {
     const url  = `${API_BASE}/google-places?lat=${userLat}&lng=${userLng}&query=${encodeURIComponent(query)}&radius=${selectedRadius}`;
@@ -1172,14 +1219,18 @@ searchBtn.addEventListener("click", async () => {
     renderResults(data.results, query);
     statusDiv.style.display = "none";
 
-    // Bee takes off from flower after results load
-    const bee = document.getElementById("header-bee");
-    bee.classList.remove("landed");
-    bee.classList.add("takeoff");
+    // Bee takes off and flower fades
+    const bee    = document.getElementById("header-bee");
+    const flower = document.getElementById("header-flower");
+    bee.classList.remove("sitting");
+    void bee.offsetWidth;
+    bee.classList.add("returning");
+    flower.classList.remove("bloom");
+    flower.classList.add("unbloom");
     setTimeout(() => {
-      bee.classList.remove("takeoff");
-      document.getElementById("header-flower").classList.remove("bloom");
-    }, 500);
+      bee.classList.remove("returning");
+      flower.classList.remove("unbloom");
+    }, 900);
   } catch (err) {
     showError("Couldn't reach the hive server. Make sure Docker is running. 🐝");
     console.error(err);
