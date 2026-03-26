@@ -73,6 +73,60 @@
       filter: drop-shadow(0 4px 8px rgba(200,120,0,0.3));
     }
 
+    .flower-wrap {
+      display: inline-block;
+      width: 0;
+      overflow: visible;
+      position: relative;
+    }
+
+    .flower {
+      font-size: 3rem;
+      display: inline-block;
+      opacity: 0;
+      transform: scale(0) translateY(20px);
+      transition: none;
+      position: relative;
+      left: -0.2em;
+    }
+
+    .flower.bloom {
+      animation: flowerBloom 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes flowerBloom {
+      0%   { opacity: 0; transform: scale(0) translateY(20px) rotate(-30deg); }
+      60%  { opacity: 1; transform: scale(1.15) translateY(-4px) rotate(5deg); }
+      100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+    }
+
+    .bee-main {
+      display: inline-block;
+      position: relative;
+      transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .bee-main.landed {
+      animation: beeLand 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+    }
+
+    .bee-main.takeoff {
+      animation: beeTakeoff 0.5s ease forwards !important;
+    }
+
+    @keyframes beeLand {
+      0%   { transform: translateY(0) rotate(-5deg); }
+      40%  { transform: translateY(-30px) translateX(20px) rotate(20deg) scale(1.1); }
+      70%  { transform: translateY(8px) translateX(-30px) rotate(-10deg) scale(0.95); }
+      100% { transform: translateY(0) translateX(-32px) rotate(0deg) scale(1); }
+    }
+
+    @keyframes beeTakeoff {
+      0%   { transform: translateY(0) translateX(-32px) rotate(0deg); }
+      50%  { transform: translateY(-20px) translateX(-10px) rotate(15deg); }
+      100% { transform: translateY(0) translateX(0) rotate(-5deg); }
+    }
+
     @keyframes bob {
       0%,100% { transform: translateY(0) rotate(-6deg); }
       50%      { transform: translateY(-10px) rotate(6deg); }
@@ -661,6 +715,27 @@
     .share-copy     { background: var(--comb); color: var(--dark); border: 1.5px solid var(--comb-dark); }
     .share-copy.copied { background: #e6f9ee; color: #1a7a40; border-color: #1a7a40; }
 
+    .feedback-toggle {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--deep-honey);
+      background: var(--comb);
+      border: 1.5px solid var(--honey);
+      border-radius: 50px;
+      padding: 0.55rem 1.4rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 10px rgba(200,120,0,0.15);
+    }
+    .feedback-toggle:hover {
+      background: var(--honey);
+      color: var(--dark);
+      box-shadow: 0 4px 16px rgba(200,120,0,0.35);
+      transform: translateY(-1px);
+    }
+
     .feedback-form {
       display: flex;
       flex-direction: column;
@@ -743,27 +818,34 @@
 
   <nav style="display:flex; justify-content:flex-end; margin-bottom:0.75rem;">
     <a href="about.html" style="
-      font-family:'DM Sans',sans-serif;
-      font-size:0.8rem;
-      font-weight:600;
-      color:var(--soft);
+      font-family:'Playfair Display',serif;
+      font-size:0.82rem;
+      font-weight:700;
+      font-style:italic;
+      color:var(--deep-honey);
       text-decoration:none;
-      border:1.5px solid var(--comb-dark);
-      border-radius:10px;
-      padding:0.4rem 0.9rem;
+      border:1.5px solid var(--honey);
+      border-radius:50px;
+      padding:0.45rem 1rem;
       background:var(--white);
-      transition:all 0.15s;
-      box-shadow: 0 2px 8px var(--shadow);
+      transition:all 0.2s;
+      box-shadow: 0 2px 10px rgba(200,120,0,0.15);
+      display:flex;
+      align-items:center;
+      gap:0.35rem;
     "
-    onmouseover="this.style.borderColor='var(--honey)';this.style.color='var(--deep-honey)'"
-    onmouseout="this.style.borderColor='var(--comb-dark)';this.style.color='var(--soft)'">
-      🐝 About Us
+    onmouseover="this.style.background='var(--honey)';this.style.color='var(--dark)';this.style.boxShadow='0 4px 16px rgba(200,120,0,0.35)';this.style.transform='translateY(-1px)'"
+    onmouseout="this.style.background='var(--white)';this.style.color='var(--deep-honey)';this.style.boxShadow='0 2px 10px rgba(200,120,0,0.15)';this.style.transform='translateY(0)'">
+      <span style="font-size:1rem;font-style:normal;">🐝</span> <span style="font-family:'DM Sans',sans-serif;font-style:normal;font-weight:600;font-size:0.82rem;">Hive Info</span>
     </a>
   </nav>
 
   <header>
     <div class="hive-logo">
-      <span class="bee-main">🐝</span>
+      <span class="flower-wrap" id="flower-wrap">
+        <span class="flower" id="header-flower">🌸</span>
+      </span>
+      <span class="bee-main" id="header-bee">🐝</span>
     </div>
     <h1>The Bee's Knees</h1>
     <p class="tagline">The hive knows best — find your top spot instantly</p>
@@ -872,7 +954,8 @@
   <div class="feedback-section">
     <div class="section-title">🍯 Got Feedback?</div>
     <div class="section-sub">Help us make The Bee's Knees even better</div>
-    <div class="feedback-form" id="feedback-form">
+    <button class="feedback-toggle" id="feedback-toggle">✍️ Share your thoughts</button>
+    <div class="feedback-form" id="feedback-form" style="display:none; margin-top:0.9rem;">
       <input type="text" id="feedback-name" placeholder="Your name (optional)" />
       <input type="email" id="feedback-email" placeholder="Your email (optional)" />
       <textarea id="feedback-message" placeholder="Tell us what you think, what's missing, or what we could improve…"></textarea>
@@ -929,10 +1012,17 @@ gpsBtn.addEventListener("click", () => {
       locationInput.value = `📡 GPS (${userLat.toFixed(4)}, ${userLng.toFixed(4)})`;
       gpsBtn.textContent = "✅";
     },
-    () => {
-      showError("Couldn't get GPS location. Try typing your location.");
+    (err) => {
       gpsBtn.textContent = "📡";
-    }
+      if (err.code === 1) {
+        showError("Location access blocked. Click the 🔒 padlock in your browser address bar → Site Settings → Location → Allow, then try again.");
+      } else if (err.code === 2) {
+        showError("Couldn't detect your location. Try typing your postcode or town instead.");
+      } else {
+        showError("Location request timed out. Try typing your postcode or town instead.");
+      }
+    },
+    { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
   );
 });
 
@@ -1059,6 +1149,15 @@ searchBtn.addEventListener("click", async () => {
   searchBtn.disabled  = true;
   resultsDiv.innerHTML = "";
 
+  // Bee lands on flower animation
+  const bee    = document.getElementById("header-bee");
+  const flower = document.getElementById("header-flower");
+  flower.classList.remove("bloom");
+  bee.classList.remove("landed", "takeoff");
+  void flower.offsetWidth; // force reflow
+  flower.classList.add("bloom");
+  setTimeout(() => { bee.classList.add("landed"); }, 300);
+
   try {
     const url  = `${API_BASE}/google-places?lat=${userLat}&lng=${userLng}&query=${encodeURIComponent(query)}&radius=${selectedRadius}`;
     const res  = await fetch(url);
@@ -1072,6 +1171,15 @@ searchBtn.addEventListener("click", async () => {
 
     renderResults(data.results, query);
     statusDiv.style.display = "none";
+
+    // Bee takes off from flower after results load
+    const bee = document.getElementById("header-bee");
+    bee.classList.remove("landed");
+    bee.classList.add("takeoff");
+    setTimeout(() => {
+      bee.classList.remove("takeoff");
+      document.getElementById("header-flower").classList.remove("bloom");
+    }, 500);
   } catch (err) {
     showError("Couldn't reach the hive server. Make sure Docker is running. 🐝");
     console.error(err);
@@ -1296,6 +1404,16 @@ document.getElementById("share-copy").addEventListener("click", () => {
 // Sign up at formspree.io and replace YOUR_FORM_ID below
 const FORMSPREE_ID    = "mbdznqed";
 const BOOKING_CID     = "7909405";
+
+document.getElementById("feedback-toggle").addEventListener("click", () => {
+  const form   = document.getElementById("feedback-form");
+  const toggle = document.getElementById("feedback-toggle");
+  const isOpen = form.style.display !== "none";
+  form.style.display   = isOpen ? "none" : "flex";
+  toggle.textContent   = isOpen ? "✍️ Share your thoughts" : "✖ Close";
+  toggle.style.fontStyle = isOpen ? "italic" : "normal";
+  if (!isOpen) document.getElementById("feedback-name").focus();
+});
 
 document.getElementById("feedback-submit").addEventListener("click", async () => {
   const name    = document.getElementById("feedback-name").value.trim();

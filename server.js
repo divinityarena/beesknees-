@@ -239,20 +239,30 @@ function normaliseName(name) {
 // ── Hive Score™ ──────────────────────────────────────────────
 // The official ranking algorithm of The Bee's Knees 🐝
 //
-//   Hive Score = (rating ^ 2.5) × log10(min(reviews, 1000) + 10)
-//   Normalised to /100 against the theoretical maximum (5★, 1000 reviews)
+//   Hive Score = (rating ^ 2.5) × log10(min(reviews,1000) + 10) × confidence
 //
-// rating^2.5 amplifies quality gaps (4.5★ meaningfully beats 4.4★)
-// log10 capped at 1,000 reviews gives credibility without letting
-// viral places dominate genuinely better-rated local gems.
-// 5% bonus if verified by both Google and Foursquare.
-const HIVE_SCORE_MAX = (Math.pow(5.0, 2.5) * Math.log10(1010)) * 1.05; // ~176.34
+//   confidence = 1 - (1 / log10(reviews + 10))
+//
+// - rating^2.5        amplifies quality gaps (4.5★ beats 4.4★ meaningfully)
+// - log10 capped      review count matters but plateaus at 1,000
+// - confidence        penalises low review counts — a 4.9★ with 6 reviews
+//                     scores ~9/100, not ~36/100 like before
+// - 5% bonus          if verified by both Google and Foursquare
+const HIVE_SCORE_MAX = Math.pow(5.0, 2.5)
+  * Math.log10(1010)
+  * (1 - (1 / Math.log10(1010)))
+  * 1.05; // ~129.xx
+
+function confidence(reviews) {
+  return 1 - (1 / Math.log10(reviews + 10));
+}
 
 function hiveScore(rating, reviews, dualSource) {
-  const base  = Math.pow(rating, 2.5) * Math.log10(Math.min(reviews, 1000) + 10);
+  const base  = Math.pow(rating, 2.5)
+              * Math.log10(Math.min(reviews, 1000) + 10)
+              * confidence(reviews);
   const bonus = dualSource ? 1.05 : 1.0;
-  const raw   = base * bonus;
-  return Math.min(Math.round((raw / HIVE_SCORE_MAX) * 100 * 10) / 10, 100);
+  return Math.min(Math.round((base * bonus / HIVE_SCORE_MAX) * 100 * 10) / 10, 100);
 }
 
 function rankAndLimit(places, userLat, userLng) {
