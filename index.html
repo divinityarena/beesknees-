@@ -164,7 +164,46 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 0.5rem;
-      margin-bottom: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .pill-group-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin: 0.7rem 0 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .pill-group-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--comb-dark);
+    }
+
+    .pill-group-label.best  { color: var(--deep-honey); }
+    .pill-group-label.near  { color: #5A8A6A; }
+
+    /* Convenience pills — slightly muted style */
+    .pill.convenience {
+      border-style: dashed;
+      opacity: 0.85;
+    }
+    .pill.convenience:hover {
+      opacity: 1;
+      border-color: #5A8A6A;
+      color: #2E6B45;
+      background: #F0FAF4;
+    }
+    .pill.convenience.active {
+      background: linear-gradient(145deg, #4CAF7D, #2E7D52);
+      border-color: #2E7D52;
+      border-style: solid;
+      color: white;
+      opacity: 1;
     }
 
     .pill {
@@ -442,6 +481,42 @@
       margin-top: 0.1rem;
     }
 
+    .share-search-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.4rem 0.9rem;
+      border-radius: 10px;
+      border: 1.5px solid var(--comb-dark);
+      background: var(--comb);
+      color: var(--soft);
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 0.75rem;
+    }
+    .share-search-btn:hover { border-color: var(--honey); color: var(--deep-honey); background: #FFF8E6; }
+    .share-search-btn.copied { background: #e6f9ee; color: #1a7a40; border-color: #1a7a40; }
+
+    .booking-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 0.28rem 0.65rem;
+      background: #003580;
+      border: none;
+      margin-left: 0.4rem;
+      transition: background 0.15s;
+    }
+    .booking-link:hover { background: #00224f; }
+
     .maps-link {
       display: inline-flex;
       align-items: center;
@@ -533,6 +608,112 @@
     }
     .mention-link:hover { background: var(--comb-dark); }
 
+    /* ── Share & Feedback ───────────────────────────────────── */
+    .share-section, .feedback-section {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      box-shadow: 0 4px 24px var(--shadow);
+      border: 1.5px solid rgba(245,166,35,0.18);
+      text-align: center;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--deep-honey);
+      margin-bottom: 0.25rem;
+    }
+
+    .section-sub {
+      font-size: 0.78rem;
+      color: var(--soft);
+      margin-bottom: 1rem;
+    }
+
+    .share-buttons {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.55rem 1rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .share-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+    .share-facebook { background: #1877F2; color: #fff; }
+    .share-twitter  { background: #000;    color: #fff; }
+    .share-whatsapp { background: #25D366; color: #fff; }
+    .share-copy     { background: var(--comb); color: var(--dark); border: 1.5px solid var(--comb-dark); }
+    .share-copy.copied { background: #e6f9ee; color: #1a7a40; border-color: #1a7a40; }
+
+    .feedback-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      text-align: left;
+    }
+
+    .feedback-form input,
+    .feedback-form textarea {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--comb-dark);
+      border-radius: 12px;
+      background: var(--comb);
+      color: var(--dark);
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .feedback-form input:focus,
+    .feedback-form textarea:focus {
+      border-color: var(--honey);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.18);
+    }
+    .feedback-form textarea { min-height: 90px; }
+
+    .feedback-submit {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, var(--honey), var(--amber));
+      color: var(--dark);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 3px 14px rgba(200,120,0,0.3);
+      transition: transform 0.15s;
+    }
+    .feedback-submit:hover { transform: translateY(-1px); }
+
+    .feedback-success {
+      display: none;
+      background: rgba(34,160,80,0.1);
+      border: 1.5px solid rgba(34,160,80,0.3);
+      border-radius: 12px;
+      padding: 0.8rem;
+      color: #1a7a40;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
     /* ── Footer ── */
     footer {
       text-align: center;
@@ -560,6 +741,26 @@
 <body>
 <div class="app">
 
+  <nav style="display:flex; justify-content:flex-end; margin-bottom:0.75rem;">
+    <a href="about.html" style="
+      font-family:'DM Sans',sans-serif;
+      font-size:0.8rem;
+      font-weight:600;
+      color:var(--soft);
+      text-decoration:none;
+      border:1.5px solid var(--comb-dark);
+      border-radius:10px;
+      padding:0.4rem 0.9rem;
+      background:var(--white);
+      transition:all 0.15s;
+      box-shadow: 0 2px 8px var(--shadow);
+    "
+    onmouseover="this.style.borderColor='var(--honey)';this.style.color='var(--deep-honey)'"
+    onmouseout="this.style.borderColor='var(--comb-dark)';this.style.color='var(--soft)'">
+      🐝 About Us
+    </a>
+  </nav>
+
   <header>
     <div class="hive-logo">
       <span class="bee-main">🐝</span>
@@ -584,25 +785,49 @@
       <input type="text" id="query-input" placeholder="e.g. Pizza, Chinese, Indian, Coffee…" />
     </div>
 
-    <div class="label">⚡ Quick Categories</div>
+    <!-- Best Of -->
+    <div class="pill-group-label best">🏆 Find the Best</div>
     <div class="pill-grid" id="pill-grid">
-      <button class="pill" data-query="takeaway food">
-        <span class="icon">🥡</span>Takeaway
+      <button class="pill" data-query="restaurant dining">
+        <span class="icon">🍽️</span>Restaurant
       </button>
       <button class="pill" data-query="pub bar">
         <span class="icon">🍺</span>Pub
       </button>
-      <button class="pill" data-query="restaurant dining">
-        <span class="icon">🍽️</span>Restaurant
+      <button class="pill" data-query="cafe coffee shop">
+        <span class="icon">☕</span>Cafe
       </button>
-      <button class="pill" data-query="gym fitness">
-        <span class="icon">💪</span>Gym
+      <button class="pill" data-query="takeaway food">
+        <span class="icon">🥡</span>Takeaway
+      </button>
+      <button class="pill" data-query="dessert ice cream bakery sweet">
+        <span class="icon">🍦</span>Dessert
+      </button>
+      <button class="pill" data-query="tourist attraction sightseeing">
+        <span class="icon">🏛️</span>Attraction
+      </button>
+      <button class="pill" data-query="park nature walk">
+        <span class="icon">🌳</span>Park
+      </button>
+      <button class="pill" data-query="hotel accommodation">
+        <span class="icon">🏨</span>Hotel
       </button>
       <button class="pill" data-query="car mechanic garage">
         <span class="icon">🔧</span>Mechanic
       </button>
-      <button class="pill" data-query="cafe coffee shop">
-        <span class="icon">☕</span>Cafe
+    </div>
+
+    <!-- Nearest -->
+    <div class="pill-group-label near">📍 Find the Nearest</div>
+    <div class="pill-grid" id="pill-grid-convenience">
+      <button class="pill convenience" data-query="pharmacy chemist">
+        <span class="icon">💊</span>Pharmacy
+      </button>
+      <button class="pill convenience" data-query="car parking">
+        <span class="icon">🅿️</span>Parking
+      </button>
+      <button class="pill convenience" data-query="bus stop train station transit">
+        <span class="icon">🚉</span>Transit
       </button>
     </div>
 
@@ -623,14 +848,57 @@
 
 </div>
 
+  <!-- Share Section -->
+  <div class="share-section">
+    <div class="section-title">🐝 Spread the Word</div>
+    <div class="section-sub">Know someone who'd love The Bee's Knees? Share it!</div>
+    <div class="share-buttons">
+      <a class="share-btn share-facebook" id="share-facebook" href="#" target="_blank" rel="noopener">
+        📘 Facebook
+      </a>
+      <a class="share-btn share-twitter" id="share-twitter" href="#" target="_blank" rel="noopener">
+        𝕏 Twitter
+      </a>
+      <a class="share-btn share-whatsapp" id="share-whatsapp" href="#" target="_blank" rel="noopener">
+        💬 WhatsApp
+      </a>
+      <button class="share-btn share-copy" id="share-copy">
+        🔗 Copy Link
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback Section -->
+  <div class="feedback-section">
+    <div class="section-title">🍯 Got Feedback?</div>
+    <div class="section-sub">Help us make The Bee's Knees even better</div>
+    <div class="feedback-form" id="feedback-form">
+      <input type="text" id="feedback-name" placeholder="Your name (optional)" />
+      <input type="email" id="feedback-email" placeholder="Your email (optional)" />
+      <textarea id="feedback-message" placeholder="Tell us what you think, what's missing, or what we could improve…"></textarea>
+      <button class="feedback-submit" id="feedback-submit">🐝 Send Feedback</button>
+    </div>
+    <div class="feedback-success" id="feedback-success">
+      ✅ Thanks for the buzz! We'll take a look. 🐝
+    </div>
+  </div>
+
+</div>
+
 <footer>
   <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
-  <div class="footer-copy">&copy; 2025 SammassimoDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
+  <div class="footer-nav" style="margin: 0.4rem 0;">
+    <a href="about.html" style="font-size:0.78rem; font-weight:600; color:var(--deep-honey); text-decoration:none; opacity:0.8; transition:opacity 0.15s;"
+       onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
+      About Us &amp; Mission
+    </a>
+  </div>
+  <div class="footer-copy">&copy; 2025 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
 </footer>
 
 <script>
 // ── Config ────────────────────────────────────────────────────
-const API_BASE       = "http://localhost:3000";
+const API_BASE       = "https://beesknees-le9p.onrender.com";
 const GOOGLE_API_KEY = "AIzaSyBodEo-Lbzg2al-4_nmLTXBFSW4VrS4nfI";
 
 // ── State ─────────────────────────────────────────────────────
@@ -669,19 +937,29 @@ gpsBtn.addEventListener("click", () => {
 });
 
 // ── Category pills ────────────────────────────────────────────
-document.getElementById("pill-grid").addEventListener("click", (e) => {
-  const pill = e.target.closest(".pill");
-  if (!pill) return;
-  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
-  pill.classList.add("active");
-  selectedQuery    = pill.dataset.query;
-  queryInput.value = "";
-  queryInput.placeholder = pill.querySelector(".icon").textContent + " " + pill.textContent.trim().replace(/^\S+\s*/,"");
+// Handle both pill grids
+document.querySelectorAll("#pill-grid, #pill-grid-convenience").forEach(grid => {
+  grid.addEventListener("click", (e) => {
+    const pill = e.target.closest(".pill");
+    if (!pill) return;
+    document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+    pill.classList.add("active");
+    selectedQuery    = pill.dataset.query;
+    queryInput.value = "";
+    queryInput.placeholder = pill.querySelector(".icon").textContent + " " + pill.textContent.trim().replace(/^\S+\s*/,"");
+
+    // Change button label for convenience searches
+    const isConvenience = pill.classList.contains("convenience");
+    searchBtn.innerHTML = isConvenience
+      ? "📍 Find the Nearest"
+      : "🐝 Scout the Hive";
+  });
 });
 
 queryInput.addEventListener("input", () => {
   document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
   selectedQuery = "";
+  searchBtn.innerHTML = "🐝 Scout the Hive";
 });
 
 // ── Distance buttons ──────────────────────────────────────────
@@ -693,17 +971,33 @@ document.getElementById("dist-row").addEventListener("click", (e) => {
   selectedRadius = parseInt(btn.dataset.radius);
 });
 
-// ── Geocode via Google — handles UK postcodes perfectly ───────
+// ── Geocode via Google — works for IE, UK and worldwide ───────
 async function geocodeLocation(text) {
-  const url  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&region=gb&key=${GOOGLE_API_KEY}`;
+  // Detect Irish Eircode (e.g. D02 XY45, V94 X2K7) or NI postcode (BT...)
+  const isEircode  = /^[A-Z]\d{2}\s*[A-Z0-9]{4}$/i.test(text.trim());
+  const isNIcode   = /^BT\d/i.test(text.trim());
+  const region     = isEircode ? "ie" : "gb"; // bias towards correct country
+
+  const url  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&region=${region}&key=${GOOGLE_API_KEY}`;
   const res  = await fetch(url);
   const data = await res.json();
 
   if (data.status === "REQUEST_DENIED")
     throw new Error("Geocoding API not enabled — check console.cloud.google.com → APIs → Geocoding API.");
 
-  if (data.status !== "OK" || !data.results.length)
-    throw new Error(`Couldn't find "${text}". Try your full postcode e.g. "BT20 4AB".`);
+  // If region-biased search found nothing, try without bias (works globally)
+  if (data.status !== "OK" || !data.results.length) {
+    const fallbackUrl  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&key=${GOOGLE_API_KEY}`;
+    const fallbackRes  = await fetch(fallbackUrl);
+    const fallbackData = await fallbackRes.json();
+
+    if (fallbackData.status !== "OK" || !fallbackData.results.length)
+      throw new Error(`Couldn't find "${text}". Try your full postcode or town name.`);
+
+    const { lat, lng } = fallbackData.results[0].geometry.location;
+    console.log(`📍 ${text} → ${fallbackData.results[0].formatted_address} (${lat}, ${lng})`);
+    return { lat, lng };
+  }
 
   const { lat, lng } = data.results[0].geometry.location;
   console.log(`📍 ${text} → ${data.results[0].formatted_address} (${lat}, ${lng})`);
@@ -711,10 +1005,19 @@ async function geocodeLocation(text) {
 }
 
 // ── Hive Score™ (mirrors server formula exactly) ─────────────
-const HIVE_SCORE_MAX = (Math.pow(5.0, 2.5) * Math.log10(1010)) * 1.05;
+const HIVE_SCORE_MAX = Math.pow(5.0, 2.5)
+  * Math.log10(1010)
+  * (1 - (1 / Math.log10(1010)))
+  * 1.05;
+
+function confidence(reviews) {
+  return 1 - (1 / Math.log10(reviews + 10));
+}
 
 function calcHiveScore(rating, reviews, dualSource) {
-  const base = Math.pow(rating, 2.5) * Math.log10(Math.min(reviews, 1000) + 10);
+  const base = Math.pow(rating, 2.5)
+             * Math.log10(Math.min(reviews, 1000) + 10)
+             * confidence(reviews);
   const raw  = base * (dualSource ? 1.05 : 1.0);
   return Math.min(Math.round((raw / HIVE_SCORE_MAX) * 100 * 10) / 10, 100);
 }
@@ -796,6 +1099,33 @@ function renderResults(rawPlaces, query) {
   resultsDiv.appendChild(heading);
 
   // Top 3 podium
+  // Share this search button
+  const shareRow = document.createElement("div");
+  shareRow.style.cssText = "text-align:center; margin-bottom:1rem;";
+  const shareSearchBtn = document.createElement("button");
+  shareSearchBtn.className = "share-search-btn";
+  shareSearchBtn.id = "share-search-btn";
+  shareSearchBtn.innerHTML = "🔗 Share these results";
+  shareSearchBtn.addEventListener("click", () => {
+    const params = new URLSearchParams({
+      q:      queryInput.value.trim() || selectedQuery,
+      lat:    userLat,
+      lng:    userLng,
+      radius: selectedRadius,
+    });
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      shareSearchBtn.textContent = "✅ Link copied!";
+      shareSearchBtn.classList.add("copied");
+      setTimeout(() => {
+        shareSearchBtn.innerHTML = "🔗 Share these results";
+        shareSearchBtn.classList.remove("copied");
+      }, 2500);
+    });
+  });
+  shareRow.appendChild(shareSearchBtn);
+  resultsDiv.appendChild(shareRow);
+
   const podium = document.createElement("div");
   podium.className = "podium";
 
@@ -825,6 +1155,7 @@ function renderResults(rawPlaces, query) {
         ${dualBadge}
         ${place.description ? `<div class="result-description">📌 ${escHtml(place.description)}</div>` : ""}
         <a class="maps-link" href="${place.maps_url}" target="_blank" rel="noopener">🗺️ Open in Maps</a>
+        ${(selectedQuery.includes("hotel") || queryInput.value.toLowerCase().includes("hotel")) ? `<a class="booking-link" href="https://www.booking.com/searchresults.html?ss=${encodeURIComponent(place.name + " " + (place.vicinity || ""))}&aid=${BOOKING_CID}&lang=en-gb&sb=1&src=searchresults" target="_blank" rel="noopener">🏨 Book on Booking.com</a>` : ""}
       </div>
     `;
     podium.appendChild(card);
@@ -895,6 +1226,111 @@ function escHtml(str) {
   d.textContent = str;
   return d.innerHTML;
 }
+
+// ── Auto-run search from URL params ──────────────────────────
+// Handles shared links like ?q=pizza&lat=54.59&lng=-5.93&radius=3000
+(function loadFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const q      = params.get("q");
+  const lat    = parseFloat(params.get("lat"));
+  const lng    = parseFloat(params.get("lng"));
+  const radius = parseInt(params.get("radius"));
+
+  if (!q || !lat || !lng) return;
+
+  // Restore state
+  userLat = lat;
+  userLng = lng;
+  if (radius) selectedRadius = radius;
+
+  // Update UI
+  locationInput.value = `📡 Shared location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+  queryInput.value    = q;
+
+  // Highlight matching pill if any
+  document.querySelectorAll(".pill").forEach(p => {
+    if (p.dataset.query === q) {
+      p.classList.add("active");
+      queryInput.value = "";
+      selectedQuery = q;
+    }
+  });
+
+  // Highlight matching radius button
+  document.querySelectorAll(".dist-btn").forEach(b => {
+    b.classList.remove("active");
+    if (parseInt(b.dataset.radius) === selectedRadius) b.classList.add("active");
+  });
+
+  // Auto-run the search
+  setTimeout(() => searchBtn.click(), 300);
+})();
+
+// ── Share buttons ─────────────────────────────────────────────
+const APP_URL  = "https://beeskneesscore.netlify.app";
+const APP_TEXT = "Find the best spots near you instantly 🐝 The Bee's Knees";
+
+document.getElementById("share-facebook").href =
+  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_URL)}`;
+
+document.getElementById("share-twitter").href =
+  `https://twitter.com/intent/tweet?text=${encodeURIComponent(APP_TEXT)}&url=${encodeURIComponent(APP_URL)}`;
+
+document.getElementById("share-whatsapp").href =
+  `https://wa.me/?text=${encodeURIComponent(APP_TEXT + " " + APP_URL)}`;
+
+document.getElementById("share-copy").addEventListener("click", () => {
+  navigator.clipboard.writeText(APP_URL).then(() => {
+    const btn = document.getElementById("share-copy");
+    btn.textContent = "✅ Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = "🔗 Copy Link";
+      btn.classList.remove("copied");
+    }, 2000);
+  });
+});
+
+// ── Feedback form ─────────────────────────────────────────────
+// Uses Formspree — free, no backend needed, sends to your email
+// Sign up at formspree.io and replace YOUR_FORM_ID below
+const FORMSPREE_ID    = "mbdznqed";
+const BOOKING_CID     = "7909405";
+
+document.getElementById("feedback-submit").addEventListener("click", async () => {
+  const name    = document.getElementById("feedback-name").value.trim();
+  const email   = document.getElementById("feedback-email").value.trim();
+  const message = document.getElementById("feedback-message").value.trim();
+
+  if (!message) {
+    document.getElementById("feedback-message").focus();
+    return;
+  }
+
+  const btn = document.getElementById("feedback-submit");
+  btn.textContent = "Sending… 🐝";
+  btn.disabled = true;
+
+  try {
+    if (FORMSPREE_ID === "YOUR_FORM_ID") {
+      // Dev mode — just simulate success
+      await new Promise(r => setTimeout(r, 800));
+    } else {
+      await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ name, email, message }),
+      });
+    }
+
+    document.getElementById("feedback-form").style.display    = "none";
+    document.getElementById("feedback-success").style.display = "block";
+  } catch {
+    btn.textContent = "🐝 Send Feedback";
+    btn.disabled    = false;
+    alert("Couldn't send feedback right now. Try again later.");
+  }
+});
 
 function showBuzz(msg) {
   statusDiv.style.display = "block";

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Us · The Bee's Knees 🐝</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --honey:      #F5A623;
+      --deep-honey: #C67C00;
+      --amber:      #E8830A;
+      --comb:       #FFF3D4;
+      --comb-dark:  #FFE5A0;
+      --dark:       #1A1000;
+      --mid:        #4A3200;
+      --soft:       #7A5C1E;
+      --white:      #FFFDF5;
+      --shadow:     rgba(90,50,0,0.13);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--comb);
+      color: var(--dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Honeycomb background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 0 L56 16 L56 48 L28 64 L0 48 L0 16Z' fill='none' stroke='%23F5A623' stroke-width='0.6' stroke-opacity='0.18'/%3E%3Cpath d='M28 64 L56 80 L56 100' fill='none' stroke='%23F5A623' stroke-width='0.6' stroke-opacity='0.18'/%3E%3Cpath d='M28 64 L0 80 L0 100' fill='none' stroke='%23F5A623' stroke-width='0.6' stroke-opacity='0.18'/%3E%3C/svg%3E"),
+        radial-gradient(ellipse at 15% 0%, rgba(245,166,35,0.16) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 100%, rgba(200,120,0,0.11) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 5rem;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
+    }
+
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--deep-honey);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .nav-back {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--soft);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      border: 1.5px solid var(--comb-dark);
+      border-radius: 10px;
+      padding: 0.4rem 0.8rem;
+      background: var(--white);
+      transition: all 0.15s;
+    }
+    .nav-back:hover { border-color: var(--honey); color: var(--deep-honey); }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .hero-bee {
+      font-size: 4rem;
+      display: block;
+      animation: bob 3s ease-in-out infinite;
+      margin-bottom: 0.5rem;
+      filter: drop-shadow(0 4px 10px rgba(200,120,0,0.25));
+    }
+
+    @keyframes bob {
+      0%,100% { transform: translateY(0) rotate(-5deg); }
+      50%      { transform: translateY(-10px) rotate(5deg); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 7vw, 2.8rem);
+      font-weight: 900;
+      color: var(--deep-honey);
+      line-height: 1.05;
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--soft);
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
+    .honey-rule {
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--honey), var(--amber));
+      border-radius: 2px;
+      margin: 1rem auto 0;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 28px var(--shadow);
+      border: 1.5px solid rgba(245,166,35,0.18);
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.12s; }
+    .card:nth-child(3) { animation-delay: 0.19s; }
+    .card:nth-child(4) { animation-delay: 0.26s; }
+    .card:nth-child(5) { animation-delay: 0.33s; }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+
+    .card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--deep-honey);
+      margin-bottom: 0.6rem;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: var(--mid);
+      line-height: 1.65;
+    }
+
+    .card p + p { margin-top: 0.6rem; }
+
+    /* ── Mission banner ── */
+    .mission {
+      background: linear-gradient(135deg, var(--deep-honey), var(--amber));
+      border-radius: 24px;
+      padding: 2rem 1.75rem;
+      margin-bottom: 1.25rem;
+      text-align: center;
+      animation: fadeUp 0.5s ease 0.08s both;
+    }
+
+    .mission h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--white);
+      margin-bottom: 0.75rem;
+      font-style: italic;
+    }
+
+    .mission p {
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.88);
+      line-height: 1.65;
+    }
+
+    /* ── Differentiators grid ── */
+    .diff-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .diff-card {
+      background: var(--white);
+      border-radius: 18px;
+      padding: 1.2rem;
+      border: 1.5px solid rgba(245,166,35,0.18);
+      box-shadow: 0 3px 16px var(--shadow);
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .diff-card:nth-child(1) { animation-delay: 0.15s; }
+    .diff-card:nth-child(2) { animation-delay: 0.20s; }
+    .diff-card:nth-child(3) { animation-delay: 0.25s; }
+    .diff-card:nth-child(4) { animation-delay: 0.30s; }
+
+    .diff-icon { font-size: 1.6rem; margin-bottom: 0.4rem; display: block; }
+
+    .diff-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--deep-honey);
+      margin-bottom: 0.3rem;
+    }
+
+    .diff-card p {
+      font-size: 0.8rem;
+      color: var(--soft);
+      line-height: 1.5;
+    }
+
+
+    /* ── Team ── */
+    .team-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .team-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--honey), var(--amber));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+      box-shadow: 0 3px 12px rgba(200,120,0,0.3);
+    }
+
+    .team-info h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .team-info p {
+      font-size: 0.82rem;
+      color: var(--soft);
+      margin-top: 0.15rem;
+      line-height: 1.5;
+    }
+
+    /* ── CTA ── */
+    .cta {
+      text-align: center;
+      margin-bottom: 1.25rem;
+      animation: fadeUp 0.5s ease 0.35s both;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--dark);
+      background: linear-gradient(135deg, var(--honey), var(--amber));
+      border: none;
+      border-radius: 16px;
+      padding: 0.9rem 2rem;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(200,120,0,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(200,120,0,0.45); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--soft);
+    }
+    .footer-main { opacity: 0.6; margin-bottom: 0.3rem; }
+    .footer-copy { font-weight: 600; color: var(--deep-honey); opacity: 0.85; }
+    .footer-copy::before { content: "🐝 "; }
+
+    @media (max-width: 420px) {
+      .diff-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="page">
+
+  <!-- Nav -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">🐝 The Bee's Knees</a>
+    <a href="index.html" class="nav-back">← Back to App</a>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <span class="hero-bee">🐝</span>
+    <h1>About Us</h1>
+    <p class="hero-sub">Who we are, what we believe, and why we built this</p>
+    <div class="honey-rule"></div>
+  </div>
+
+  <!-- Who We Are -->
+  <div class="card">
+    <span class="card-icon">👋</span>
+    <h2>Who We Are</h2>
+    <p>
+      We're <strong>GoibniuDevs</strong> — an independent development studio based in
+      <strong>Belfast, Northern Ireland</strong>. We build tools that are fast, focused,
+      and genuinely useful for real people.
+    </p>
+    <p>
+      The Bee's Knees was born out of a simple frustration: search results for
+      "best restaurant near me" were full of paid placements, outdated reviews and
+      chains that gamed the algorithm. We wanted something honest. Something that
+      just told you the actual best option. So we built it.
+    </p>
+  </div>
+
+  <!-- Mission -->
+  <div class="mission">
+    <h2>"No noise. Just the best."</h2>
+    <p>
+      Our mission is to help people — locals, tourists, and everyone in between —
+      instantly find the highest-quality spots near them, without wading through
+      sponsored results, irrelevant listings, or inflated ratings.
+      One search. Top five. Done.
+    </p>
+  </div>
+
+  <!-- What Makes Us Different -->
+  <div class="card">
+    <span class="card-icon">🏆</span>
+    <h2>What Makes Us Different</h2>
+
+    <div class="diff-grid">
+      <div class="diff-card">
+        <span class="diff-icon">🍯</span>
+        <h3>The Hive Score™</h3>
+        <p>Our own ranking algorithm. Quality always beats popularity — a 4.5★ gem beats a 4.2★ chain every time.</p>
+      </div>
+
+      <div class="diff-card">
+        <span class="diff-icon">⚡</span>
+        <h3>Top 5 Only</h3>
+        <p>No endless scrolling. You get the best three and two honourable mentions. That's it.</p>
+      </div>
+      <div class="diff-card">
+        <span class="diff-icon">🌍</span>
+        <h3>Works Anywhere</h3>
+        <p>Wherever you are in the world, you can rely on The Bee's Knees to find the best nearby.</p>
+      </div>
+    </div>
+
+
+  </div>
+
+  <!-- How We Can Help -->
+  <div class="card">
+    <span class="card-icon">🤝</span>
+    <h2>How We Can Help</h2>
+    <p>
+      <strong>For visitors & tourists:</strong> Arrive anywhere in Ireland and instantly
+      know the best pub, restaurant, hotel or attraction within walking distance —
+      ranked by real quality, not marketing spend.
+    </p>
+    <p>
+      <strong>For locals:</strong> Discover hidden gems in your own city you might
+      have walked past a hundred times. The Hive Score surfaces quality that often
+      gets buried under noisier, less deserving competitors.
+    </p>
+    <p>
+      <strong>For tourism organisations & businesses:</strong> We offer white-label
+      partnerships and featured placement opportunities. If you'd like to explore
+      working together, we'd love to hear from you.
+    </p>
+  </div>
+
+  <!-- Team -->
+  <div class="card">
+    <span class="card-icon">🧑‍💻</span>
+    <h2>The Team</h2>
+    <div class="team-row">
+      <div class="team-avatar">🐝</div>
+      <div class="team-info">
+        <h3>GoibniuDevs</h3>
+        <p>Independent studio · Belfast, Northern Ireland<br/>
+        Building honest tools for real people since day one.<br/>
+        Got a question? Use the <a href="index.html#feedback"
+           style="color:var(--deep-honey); font-weight:600; text-decoration:none;">
+          feedback form</a> on the app.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <a href="index.html" class="cta-btn">🐝 Try The Bee's Knees</a>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
+  <div class="footer-copy">&copy; 2025 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
+</footer>
+
+</body>
+</html>
