@@ -15,17 +15,38 @@ const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY || "GKBKSLTO13YCILAF3Z
 app.use(cors());
 app.use(express.json());
 
-// ── Serve HTML files first ────────────────────────────────────
+// ── Serve HTML files ─────────────────────────────────────────
+const fs = require("fs");
+
+// Log what we can see at startup
+console.log("📁 __dirname:", __dirname);
+console.log("📁 files:", fs.readdirSync(__dirname));
+
+const INDEX_PATH = path.join(__dirname, "index.html");
+const ABOUT_PATH = path.join(__dirname, "about.html");
+
 app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  if (fs.existsSync(INDEX_PATH)) {
+    res.sendFile(INDEX_PATH);
+  } else {
+    res.status(404).send("index.html not found at " + INDEX_PATH);
+  }
 });
 
 app.get("/about", (_req, res) => {
-  res.sendFile(path.join(__dirname, "about.html"));
+  if (fs.existsSync(ABOUT_PATH)) {
+    res.sendFile(ABOUT_PATH);
+  } else {
+    res.status(404).send("about.html not found at " + ABOUT_PATH);
+  }
 });
 
 app.get("/about.html", (_req, res) => {
-  res.sendFile(path.join(__dirname, "about.html"));
+  if (fs.existsSync(ABOUT_PATH)) {
+    res.sendFile(ABOUT_PATH);
+  } else {
+    res.status(404).send("about.html not found at " + ABOUT_PATH);
+  }
 });
 
 // ── Health check ─────────────────────────────────────────────

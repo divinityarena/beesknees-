@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: beesknees
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: GOOGLE_API_KEY
+        value: AIzaSyBodEo-Lbzg2al-4_nmLTXBFSW4VrS4nfI
+      - key: FOURSQUARE_API_KEY
+        value: GKBKSLTO13YCILAF3ZTKQ2P0V3QCPAJQDOSJSVXUAK4W3IW5
