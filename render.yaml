@@ -2,6 +2,7 @@ services:
   - type: web
     name: beesknees
     runtime: node
+    rootDir: .
     buildCommand: npm install
     startCommand: node server.js
     envVars:

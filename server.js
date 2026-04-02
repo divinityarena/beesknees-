@@ -18,35 +18,44 @@ app.use(express.json());
 // ── Serve HTML files ─────────────────────────────────────────
 const fs = require("fs");
 
-// Log what we can see at startup
-console.log("📁 __dirname:", __dirname);
-console.log("📁 files:", fs.readdirSync(__dirname));
+// Search multiple locations for HTML files
+const SEARCH_DIRS = [
+  __dirname,
+  "/app",
+  process.cwd(),
+  path.join(__dirname, ".."),
+];
 
-const INDEX_PATH = path.join(__dirname, "index.html");
-const ABOUT_PATH = path.join(__dirname, "about.html");
+console.log("📁 __dirname:", __dirname);
+console.log("📁 cwd:", process.cwd());
+SEARCH_DIRS.forEach(d => {
+  try { console.log(`📁 ${d}:`, fs.readdirSync(d)); } catch(e) {}
+});
+
+function findFile(filename) {
+  for (const dir of SEARCH_DIRS) {
+    const p = path.join(dir, filename);
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
 
 app.get("/", (_req, res) => {
-  if (fs.existsSync(INDEX_PATH)) {
-    res.sendFile(INDEX_PATH);
-  } else {
-    res.status(404).send("index.html not found at " + INDEX_PATH);
-  }
+  const p = findFile("index.html");
+  if (p) res.sendFile(p);
+  else res.status(404).send("index.html not found. Searched: " + SEARCH_DIRS.join(", "));
 });
 
 app.get("/about", (_req, res) => {
-  if (fs.existsSync(ABOUT_PATH)) {
-    res.sendFile(ABOUT_PATH);
-  } else {
-    res.status(404).send("about.html not found at " + ABOUT_PATH);
-  }
+  const p = findFile("about.html");
+  if (p) res.sendFile(p);
+  else res.status(404).send("about.html not found");
 });
 
 app.get("/about.html", (_req, res) => {
-  if (fs.existsSync(ABOUT_PATH)) {
-    res.sendFile(ABOUT_PATH);
-  } else {
-    res.status(404).send("about.html not found at " + ABOUT_PATH);
-  }
+  const p = findFile("about.html");
+  if (p) res.sendFile(p);
+  else res.status(404).send("about.html not found");
 });
 
 // ── Health check ─────────────────────────────────────────────
