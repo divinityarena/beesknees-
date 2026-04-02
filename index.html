@@ -855,6 +855,31 @@
     @media (max-width: 380px) {
       .pill-grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* ── Nav pill ── */
+    .nav-pill {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--deep-honey);
+      text-decoration: none;
+      border: 1.5px solid var(--honey);
+      border-radius: 50px;
+      padding: 0.45rem 1.1rem;
+      background: var(--white);
+      transition: all 0.2s;
+      box-shadow: 0 2px 10px rgba(200,120,0,0.15);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .nav-pill:hover {
+      background: var(--honey);
+      color: var(--dark);
+      box-shadow: 0 4px 16px rgba(200,120,0,0.35);
+      transform: translateY(-2px);
+    }
+
   </style>
 </head>
 
@@ -862,7 +887,7 @@
 <div class="app">
 
   <nav style="display:flex; justify-content:flex-end; margin-bottom:0.75rem;">
-    <a href="about.html" class="nav-pill">🐝 Hive Info</a>
+    <a href="/about" class="nav-pill">🐝 Hive Info</a>
   </nav>
 
   <header>
@@ -996,7 +1021,7 @@
 <footer>
   <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
   <div class="footer-nav" style="margin: 0.4rem 0;">
-    <a href="about.html" style="font-size:0.78rem; font-weight:600; color:var(--deep-honey); text-decoration:none; opacity:0.8; transition:opacity 0.15s;"
+    <a href="/about" style="font-size:0.78rem; font-weight:600; color:var(--deep-honey); text-decoration:none; opacity:0.8; transition:opacity 0.15s;"
        onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
       About Us &amp; Mission
     </a>
