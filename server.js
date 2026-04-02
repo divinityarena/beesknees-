@@ -30,7 +30,13 @@ app.get("/about.html", (_req, res) => {
 
 // ── Health check ─────────────────────────────────────────────
 app.get("/health", (_req, res) => {
-  res.json({ status: "🐝 The Bee's Knees server is buzzing!" });
+  const fs = require("fs");
+  res.json({
+    status:      "🐝 The Bee's Knees server is buzzing!",
+    __dirname:   __dirname,
+    files:       fs.readdirSync(__dirname),
+    index_exists: fs.existsSync(__dirname + "/index.html"),
+  });
 });
 
 // ── Main API endpoint ─────────────────────────────────────────
