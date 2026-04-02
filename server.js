@@ -18,9 +18,22 @@ const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY || "GKBKSLTO13YCILAF3Z
 app.use(cors());
 app.use(express.json());
 
+// ── Serve frontend files ──────────────────────────────────────
+const path = require("path");
+app.use(express.static(path.join(__dirname)));
+
 // ── Health check ─────────────────────────────────────────────
-app.get("/", (_req, res) => {
+app.get("/health", (_req, res) => {
   res.json({ status: "🐝 The Bee's Knees server is buzzing!" });
+});
+
+// ── Root + catch-all → index.html ────────────────────────────
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.get("/about", (_req, res) => {
+  res.sendFile(path.join(__dirname, "about.html"));
 });
 
 // ── Main endpoint ─────────────────────────────────────────────
