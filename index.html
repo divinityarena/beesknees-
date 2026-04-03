@@ -707,6 +707,52 @@
     }
     .mention-link:hover { background: var(--comb-dark); }
 
+    /* ── Waggle Vote ─────────────────────────────────────────── */
+    .waggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 0.5rem 0 0.3rem;
+    }
+
+    .waggle-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--deep-honey);
+      background: var(--comb);
+      border: 1.5px solid var(--honey);
+      border-radius: 50px;
+      padding: 0.28rem 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .waggle-btn:hover {
+      background: var(--honey);
+      color: var(--dark);
+      transform: translateY(-1px);
+    }
+    .waggle-btn.voted {
+      background: linear-gradient(135deg, var(--honey), var(--amber));
+      color: var(--dark);
+      border-color: var(--amber);
+      cursor: default;
+    }
+    .waggle-btn.voted:hover { transform: none; }
+
+    .waggle-count {
+      font-size: 0.75rem;
+      color: var(--soft);
+      font-weight: 500;
+    }
+    .waggle-count.has-votes {
+      color: var(--deep-honey);
+      font-weight: 700;
+    }
+
     /* ── Share & Feedback ───────────────────────────────────── */
     .share-section, .feedback-section {
       background: var(--white);
@@ -1145,9 +1191,9 @@ async function geocodeLocation(text) {
 }
 
 // ── Hive Score™ (mirrors server formula exactly) ─────────────
-const HIVE_SCORE_MAX = Math.pow(5.0, 2.5)
-  * Math.log10(1010)
-  * (1 - (1 / Math.log10(1010)))
+const HIVE_SCORE_MAX = Math.pow(5.0, 3.0)
+  * Math.log10(510)
+  * (1 - (1 / Math.log10(510)))
   * 1.05;
 
 function confidence(reviews) {
@@ -1155,8 +1201,8 @@ function confidence(reviews) {
 }
 
 function calcHiveScore(rating, reviews, dualSource) {
-  const base = Math.pow(rating, 2.5)
-             * Math.log10(Math.min(reviews, 1000) + 10)
+  const base = Math.pow(rating, 3.0)
+             * Math.log10(Math.min(reviews, 500) + 10)
              * confidence(reviews);
   const raw  = base * (dualSource ? 1.05 : 1.0);
   return Math.min(Math.round((raw / HIVE_SCORE_MAX) * 100 * 10) / 10, 100);
@@ -1243,6 +1289,10 @@ searchBtn.addEventListener("click", async () => {
 
     renderResults(data.results, query);
     statusDiv.style.display = "none";
+
+    // Load waggle votes for displayed results
+    const placeIds = data.results.map(p => p.place_id).filter(Boolean);
+    loadWaggleVotes(placeIds);
 
     // Bee takes off and flower fades
     const bee    = document.getElementById("header-bee");
@@ -1338,6 +1388,13 @@ function renderResults(rawPlaces, query) {
         ${renderHours(place)}
         ${dualBadge}
         ${place.description ? `<div class="result-description">📌 ${escHtml(place.description)}</div>` : ""}
+        <div class="waggle-row">
+          <button class="waggle-btn" id="waggle-${escHtml(place.place_id)}"
+            onclick="castWaggle('${escHtml(place.place_id)}', '${escHtml(place.name)}', this)">
+            🐝 This is the Bee's Knees!
+          </button>
+          <span class="waggle-count" id="waggle-count-${escHtml(place.place_id)}"></span>
+        </div>
         <a class="maps-link" href="${place.maps_url}" target="_blank" rel="noopener">🗺️ Open in Maps</a>
         ${(selectedQuery.includes("hotel") || queryInput.value.toLowerCase().includes("hotel")) ? `<a class="booking-link" href="https://www.booking.com/searchresults.html?ss=${encodeURIComponent(place.name + " " + (place.vicinity || ""))}&aid=${BOOKING_CID}&lang=en-gb&sb=1&src=searchresults" target="_blank" rel="noopener">🏨 Book on Booking.com</a>` : ""}
       </div>
@@ -1450,6 +1507,59 @@ function escHtml(str) {
   setTimeout(() => searchBtn.click(), 300);
 })();
 
+// ── Waggle Vote ───────────────────────────────────────────────
+const voted = JSON.parse(localStorage.getItem("bk_voted") || "{}");
+
+async function loadWaggleVotes(placeIds) {
+  if (!placeIds.length) return;
+  try {
+    const res  = await fetch(`${API_BASE}/votes?place_ids=${placeIds.join(",")}`);
+    const data = await res.json();
+    placeIds.forEach(id => {
+      const count = data.votes?.[id] || 0;
+      updateWaggleUI(id, count, voted[id]);
+    });
+  } catch (e) { console.warn("Votes fetch failed", e); }
+}
+
+function updateWaggleUI(placeId, count, hasVoted) {
+  const btn      = document.getElementById(`waggle-${placeId}`);
+  const countEl  = document.getElementById(`waggle-count-${placeId}`);
+  if (!btn || !countEl) return;
+
+  if (hasVoted) {
+    btn.textContent = "🐝 You agreed!";
+    btn.classList.add("voted");
+  }
+  if (count > 0) {
+    countEl.textContent = `${count} Bee${count === 1 ? "" : "s"} agree`;
+    countEl.classList.add("has-votes");
+  } else {
+    countEl.textContent = "";
+  }
+}
+
+async function castWaggle(placeId, placeName, btn) {
+  if (voted[placeId]) return;
+  btn.textContent = "🐝 Buzzing…";
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch(`${API_BASE}/vote`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ place_id: placeId, place_name: placeName, voter_id: VOTER_ID }),
+    });
+    const data = await res.json();
+    voted[placeId] = true;
+    localStorage.setItem("bk_voted", JSON.stringify(voted));
+    updateWaggleUI(placeId, data.total, true);
+  } catch (e) {
+    btn.textContent = "🐝 This is the Bee's Knees!";
+    btn.disabled = false;
+  }
+}
+
 // ── Share buttons ─────────────────────────────────────────────
 const APP_URL  = "https://beeskneesscore.netlify.app";
 const APP_TEXT = "Find the best spots near you instantly 🐝 The Bee's Knees";
@@ -1480,6 +1590,13 @@ document.getElementById("share-copy").addEventListener("click", () => {
 // Sign up at formspree.io and replace YOUR_FORM_ID below
 const FORMSPREE_ID    = "mbdznqed";
 const BOOKING_CID     = "7909405";
+
+// ── Voter ID — random per browser, stored in localStorage ────
+const VOTER_ID = (() => {
+  let id = localStorage.getItem("bk_voter_id");
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem("bk_voter_id", id); }
+  return id;
+})();
 
 document.getElementById("feedback-toggle").addEventListener("click", () => {
   const form   = document.getElementById("feedback-form");

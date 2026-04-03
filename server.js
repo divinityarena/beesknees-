@@ -5,6 +5,34 @@
 const express = require("express");
 const cors    = require("cors");
 const path    = require("path");
+const { Pool } = require("pg");
+
+// ── PostgreSQL (Render free DB) ───────────────────────────────
+// Set DATABASE_URL in Render environment variables
+const pool = process.env.DATABASE_URL ? new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+}) : null;
+
+// Create votes table if it doesn't exist
+async function initDB() {
+  if (!pool) return console.log("⚠️  No DATABASE_URL — votes disabled");
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS waggle_votes (
+        place_id    TEXT NOT NULL,
+        place_name  TEXT NOT NULL,
+        voter_hash  TEXT NOT NULL,
+        created_at  TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (place_id, voter_hash)
+      );
+    `);
+    console.log("🐝 Waggle votes DB ready");
+  } catch (e) {
+    console.error("DB init error:", e.message);
+  }
+}
+initDB();
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -67,6 +95,54 @@ app.get("/health", (_req, res) => {
     files:       fs.readdirSync(__dirname),
     index_exists: fs.existsSync(__dirname + "/index.html"),
   });
+});
+
+// ── Waggle Vote endpoints ─────────────────────────────────────
+// POST /vote  { place_id, place_name, voter_id }
+app.post("/vote", async (req, res) => {
+  if (!pool) return res.status(503).json({ error: "Votes not available" });
+  const { place_id, place_name, voter_id } = req.body;
+  if (!place_id || !voter_id) return res.status(400).json({ error: "Missing params" });
+
+  // Hash the voter_id so we never store raw identifiers
+  const crypto     = require("crypto");
+  const voter_hash = crypto.createHash("sha256").update(voter_id).digest("hex");
+
+  try {
+    await pool.query(
+      `INSERT INTO waggle_votes (place_id, place_name, voter_hash)
+       VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+      [place_id, place_name || "Unknown", voter_hash]
+    );
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) as total FROM waggle_votes WHERE place_id = $1`,
+      [place_id]
+    );
+    res.json({ success: true, total: parseInt(rows[0].total) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /votes?place_ids=id1,id2,id3
+app.get("/votes", async (req, res) => {
+  if (!pool) return res.json({ votes: {} });
+  const ids = (req.query.place_ids || "").split(",").filter(Boolean);
+  if (!ids.length) return res.json({ votes: {} });
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT place_id, COUNT(*) as total
+       FROM waggle_votes WHERE place_id = ANY($1)
+       GROUP BY place_id`,
+      [ids]
+    );
+    const votes = {};
+    rows.forEach(r => { votes[r.place_id] = parseInt(r.total); });
+    res.json({ votes });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── Main API endpoint ─────────────────────────────────────────
@@ -244,14 +320,25 @@ function normaliseName(name) {
 }
 
 // ── Hive Score™ ───────────────────────────────────────────────
-const HIVE_SCORE_MAX = Math.pow(5.0, 2.5) * Math.log10(1010) * (1 - (1 / Math.log10(1010))) * 1.05;
+// rating^3.0  — quality gap between 4.5★ and 4.4★ is now more meaningful
+// cap at 500  — review count plateaus sooner, hidden gems surface faster
+// confidence  — still penalises very low review counts
+const HIVE_SCORE_MAX = Math.pow(5.0, 3.0)
+  * Math.log10(510)
+  * (1 - (1 / Math.log10(510)))
+  * 1.05;
 
 function confidence(reviews) { return 1 - (1 / Math.log10(reviews + 10)); }
 
-function hiveScore(rating, reviews, dualSource) {
-  const base  = Math.pow(rating, 2.5) * Math.log10(Math.min(reviews, 1000) + 10) * confidence(reviews);
+function hiveScore(rating, reviews, dualSource, userBoost = 0) {
+  const base  = Math.pow(rating, 3.0)
+              * Math.log10(Math.min(reviews, 500) + 10)
+              * confidence(reviews);
   const bonus = dualSource ? 1.05 : 1.0;
-  return Math.min(Math.round((base * bonus / HIVE_SCORE_MAX) * 100 * 10) / 10, 100);
+  const score = (base * bonus / HIVE_SCORE_MAX) * 100;
+  // User boost: each 10 waggle votes adds 1 point, capped at 5 bonus points
+  const waggleBonus = Math.min(userBoost / 10, 5);
+  return Math.min(Math.round((score + waggleBonus) * 10) / 10, 100);
 }
 
 function rankAndLimit(places, userLat, userLng) {
