@@ -37,8 +37,12 @@ initDB();
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-const GOOGLE_API_KEY     = process.env.GOOGLE_API_KEY     || "AIzaSyBodEo-Lbzg2al-4_nmLTXBFSW4VrS4nfI";
-const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY || "GKBKSLTO13YCILAF3ZTKQ2P0V3QCPAJQDOSJSVXUAK4W3IW5";
+const GOOGLE_API_KEY     = process.env.GOOGLE_API_KEY;
+const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
+
+if (!GOOGLE_API_KEY || !FOURSQUARE_API_KEY) {
+  console.error("❌ Missing API keys — set GOOGLE_API_KEY and FOURSQUARE_API_KEY in environment variables");
+}
 
 app.use(cors());
 app.use(express.json());
