@@ -2,21 +2,31 @@
 // The Bee's Knees 🐝 — Backend Server
 // ============================================================
 
-const express = require("express");
-const cors    = require("cors");
-const path    = require("path");
+const express  = require("express");
+const cors     = require("cors");
+const path     = require("path");
+const fs       = require("fs");
+const crypto   = require("crypto");
 const { Pool } = require("pg");
 
-// ── PostgreSQL (Render free DB) ───────────────────────────────
-// Set DATABASE_URL in Render environment variables
+const app  = express();
+const PORT = process.env.PORT || 3000;
+
+// ── API Keys (from environment variables only — never hardcode) ─
+const GOOGLE_API_KEY     = process.env.GOOGLE_API_KEY;
+const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
+
+if (!GOOGLE_API_KEY)     console.error("❌ Missing GOOGLE_API_KEY");
+if (!FOURSQUARE_API_KEY) console.error("❌ Missing FOURSQUARE_API_KEY");
+
+// ── PostgreSQL — Waggle Votes ─────────────────────────────────
 const pool = process.env.DATABASE_URL ? new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 }) : null;
 
-// Create votes table if it doesn't exist
 async function initDB() {
-  if (!pool) return console.log("⚠️  No DATABASE_URL — votes disabled");
+  if (!pool) return console.log("⚠️  No DATABASE_URL — waggle votes disabled");
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS waggle_votes (
@@ -34,82 +44,40 @@ async function initDB() {
 }
 initDB();
 
-const app  = express();
-const PORT = process.env.PORT || 3000;
-
-const GOOGLE_API_KEY     = process.env.GOOGLE_API_KEY;
-const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
-
-if (!GOOGLE_API_KEY || !FOURSQUARE_API_KEY) {
-  console.error("❌ Missing API keys — set GOOGLE_API_KEY and FOURSQUARE_API_KEY in environment variables");
-}
-
 app.use(cors());
 app.use(express.json());
 
-// ── Serve HTML files ─────────────────────────────────────────
-const fs = require("fs");
-
-// Search multiple locations for HTML files
-const SEARCH_DIRS = [
-  __dirname,
-  "/app",
-  process.cwd(),
-  path.join(__dirname, ".."),
-];
-
-console.log("📁 __dirname:", __dirname);
-console.log("📁 cwd:", process.cwd());
-SEARCH_DIRS.forEach(d => {
-  try { console.log(`📁 ${d}:`, fs.readdirSync(d)); } catch(e) {}
-});
-
-function findFile(filename) {
-  for (const dir of SEARCH_DIRS) {
-    const p = path.join(dir, filename);
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
+// ── Serve HTML files ──────────────────────────────────────────
+const HTML_DIR = __dirname;
+console.log(`📁 Serving HTML from: ${HTML_DIR}`);
+console.log(`📁 Files: ${fs.readdirSync(HTML_DIR).join(", ")}`);
 
 app.get("/", (_req, res) => {
-  const p = findFile("index.html");
-  if (p) res.sendFile(p);
-  else res.status(404).send("index.html not found. Searched: " + SEARCH_DIRS.join(", "));
+  const p = path.join(HTML_DIR, "index.html");
+  fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("index.html not found");
 });
 
 app.get("/about", (_req, res) => {
-  const p = findFile("about.html");
-  if (p) res.sendFile(p);
-  else res.status(404).send("about.html not found");
+  const p = path.join(HTML_DIR, "about.html");
+  fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("about.html not found");
 });
 
 app.get("/about.html", (_req, res) => {
-  const p = findFile("about.html");
-  if (p) res.sendFile(p);
-  else res.status(404).send("about.html not found");
+  const p = path.join(HTML_DIR, "about.html");
+  fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("about.html not found");
 });
 
-// ── Health check ─────────────────────────────────────────────
+// ── Health check ──────────────────────────────────────────────
 app.get("/health", (_req, res) => {
-  const fs = require("fs");
-  res.json({
-    status:      "🐝 The Bee's Knees server is buzzing!",
-    __dirname:   __dirname,
-    files:       fs.readdirSync(__dirname),
-    index_exists: fs.existsSync(__dirname + "/index.html"),
-  });
+  res.json({ status: "🐝 The Bee's Knees server is buzzing!" });
 });
 
-// ── Waggle Vote endpoints ─────────────────────────────────────
-// POST /vote  { place_id, place_name, voter_id }
+// ── Waggle Vote: POST /vote ───────────────────────────────────
 app.post("/vote", async (req, res) => {
-  if (!pool) return res.status(503).json({ error: "Votes not available" });
+  if (!pool) return res.status(503).json({ error: "Votes not available — no database connected" });
   const { place_id, place_name, voter_id } = req.body;
-  if (!place_id || !voter_id) return res.status(400).json({ error: "Missing params" });
+  if (!place_id || !voter_id) return res.status(400).json({ error: "Missing place_id or voter_id" });
 
-  // Hash the voter_id so we never store raw identifiers
-  const crypto     = require("crypto");
   const voter_hash = crypto.createHash("sha256").update(voter_id).digest("hex");
 
   try {
@@ -128,7 +96,7 @@ app.post("/vote", async (req, res) => {
   }
 });
 
-// GET /votes?place_ids=id1,id2,id3
+// ── Waggle Votes: GET /votes?place_ids=id1,id2 ───────────────
 app.get("/votes", async (req, res) => {
   if (!pool) return res.json({ votes: {} });
   const ids = (req.query.place_ids || "").split(",").filter(Boolean);
@@ -149,7 +117,8 @@ app.get("/votes", async (req, res) => {
   }
 });
 
-// ── Main API endpoint ─────────────────────────────────────────
+// ── Main Search Endpoint ──────────────────────────────────────
+// GET /google-places?lat=XX&lng=YY&query=pizza&radius=3000
 app.get("/google-places", async (req, res) => {
   const { lat, lng, query, radius = 3000 } = req.query;
 
@@ -169,15 +138,16 @@ app.get("/google-places", async (req, res) => {
     if (googleResult.status === "rejected") console.warn("Google failed:", googleResult.reason.message);
     if (fsqResult.status    === "rejected") console.warn("FSQ failed:",    fsqResult.reason.message);
 
-    console.log(`📊 Google: ${google.length} results, Foursquare: ${fsq.length} results`);
+    console.log(`📊 Google: ${google.length} · Foursquare: ${fsq.length}`);
 
-    if (google.length === 0 && fsq.length === 0) {
+    if (!google.length && !fsq.length) {
       return res.json({ results: [], sources: { google: 0, foursquare: 0 } });
     }
 
     const merged   = mergePlaces(google, fsq);
     const ranked   = rankAndLimit(merged, lat, lng);
 
+    // Fetch opening hours for top results in parallel
     const withHours = await Promise.all(
       ranked.map(async (place) => {
         if (!place.place_id || place.source === "foursquare") return place;
@@ -200,18 +170,18 @@ app.get("/google-places", async (req, res) => {
 async function fetchGooglePlaces({ lat, lng, query, radius }) {
   const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
   url.searchParams.set("location", `${lat},${lng}`);
-  url.searchParams.set("radius", radius);
-  url.searchParams.set("keyword", query);
-  url.searchParams.set("key", GOOGLE_API_KEY);
+  url.searchParams.set("radius",   radius);
+  url.searchParams.set("keyword",  query);
+  url.searchParams.set("key",      GOOGLE_API_KEY);
 
   const res  = await fetch(url.toString());
   const data = await res.json();
 
   if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-    throw new Error(`Google: ${data.status} — ${data.error_message || ""}`);
+    throw new Error(`Google API: ${data.status} — ${data.error_message || ""}`);
   }
 
-  return (data.results || []).map((p) => ({
+  return (data.results || []).map(p => ({
     source:          "google",
     name:            p.name,
     normalised_name: normaliseName(p.name),
@@ -233,16 +203,16 @@ async function fetchFoursquarePlaces({ lat, lng, query, radius }) {
   url.searchParams.set("radius", radius);
   url.searchParams.set("query",  query);
   url.searchParams.set("limit",  "50");
-  url.searchParams.set("fields", "fsq_id,name,geocodes,rating,stats,location,link,categories,hours_popular,price");
+  url.searchParams.set("fields", "fsq_id,name,geocodes,rating,stats,location,categories,price");
 
   const res  = await fetch(url.toString(), {
     headers: { Authorization: FOURSQUARE_API_KEY, Accept: "application/json" },
   });
   const data = await res.json();
 
-  if (!res.ok) throw new Error(`Foursquare: ${data.message || res.status}`);
+  if (!res.ok) throw new Error(`Foursquare API: ${data.message || res.status}`);
 
-  return (data.results || []).map((p) => ({
+  return (data.results || []).map(p => ({
     source:          "foursquare",
     name:            p.name,
     normalised_name: normaliseName(p.name),
@@ -257,7 +227,7 @@ async function fetchFoursquarePlaces({ lat, lng, query, radius }) {
   }));
 }
 
-// ── Description builders ──────────────────────────────────────
+// ── Description Builders ──────────────────────────────────────
 function buildGoogleDescription(p) {
   const types = (p.types || [])
     .filter(t => !["point_of_interest","establishment","food","premise"].includes(t))
@@ -302,12 +272,20 @@ function mergePlaces(googlePlaces, fsqPlaces) {
       const combinedRating = (g.rating != null && match.rating != null)
         ? +((g.rating + match.rating) / 2).toFixed(2)
         : g.rating ?? match.rating;
-      merged.push({ ...g, rating: combinedRating, review_count: g.review_count + match.review_count, sources: ["google","foursquare"], description: g.description || match.description || null });
+      merged.push({
+        ...g,
+        rating:       combinedRating,
+        review_count: g.review_count + match.review_count,
+        sources:      ["google", "foursquare"],
+        description:  g.description || match.description || null,
+      });
     } else {
       merged.push({ ...g, sources: ["google"] });
     }
   }
-  fsqPlaces.forEach((f, i) => { if (!usedFsq.has(i)) merged.push({ ...f, sources: ["foursquare"] }); });
+  fsqPlaces.forEach((f, i) => {
+    if (!usedFsq.has(i)) merged.push({ ...f, sources: ["foursquare"] });
+  });
   return merged;
 }
 
@@ -324,41 +302,46 @@ function normaliseName(name) {
 }
 
 // ── Hive Score™ ───────────────────────────────────────────────
-// rating^3.0  — quality gap between 4.5★ and 4.4★ is now more meaningful
+// rating^3.0  — quality gaps are amplified (4.5★ meaningfully beats 4.4★)
 // cap at 500  — review count plateaus sooner, hidden gems surface faster
-// confidence  — still penalises very low review counts
+// confidence  — penalises very low review counts
+// waggle boost — up to +5 points from user votes
 const HIVE_SCORE_MAX = Math.pow(5.0, 3.0)
   * Math.log10(510)
   * (1 - (1 / Math.log10(510)))
   * 1.05;
 
-function confidence(reviews) { return 1 - (1 / Math.log10(reviews + 10)); }
-
-function hiveScore(rating, reviews, dualSource, userBoost = 0) {
-  const base  = Math.pow(rating, 3.0)
-              * Math.log10(Math.min(reviews, 500) + 10)
-              * confidence(reviews);
-  const bonus = dualSource ? 1.05 : 1.0;
-  const score = (base * bonus / HIVE_SCORE_MAX) * 100;
-  // User boost: each 10 waggle votes adds 1 point, capped at 5 bonus points
-  const waggleBonus = Math.min(userBoost / 10, 5);
-  return Math.min(Math.round((score + waggleBonus) * 10) / 10, 100);
+function confidence(reviews) {
+  return 1 - (1 / Math.log10(reviews + 10));
 }
 
+function hiveScore(rating, reviews, dualSource, waggleVotes = 0) {
+  const base       = Math.pow(rating, 3.0)
+                   * Math.log10(Math.min(reviews, 500) + 10)
+                   * confidence(reviews);
+  const bonus      = dualSource ? 1.05 : 1.0;
+  const score      = (base * bonus / HIVE_SCORE_MAX) * 100;
+  const wagglePts  = Math.min(waggleVotes / 10, 5);
+  return Math.min(Math.round((score + wagglePts) * 10) / 10, 100);
+}
+
+// ── Rank and return top 5 ─────────────────────────────────────
 function rankAndLimit(places, userLat, userLng) {
   const scored = places
     .filter(p => p.rating !== null && p.rating > 0 && p.lat && p.lng)
     .map(p => ({
       ...p,
+      maps_url:    p.maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((p.name || "") + " " + (p.vicinity || ""))}`,
       distance_km: haversineKm(userLat, userLng, p.lat, p.lng),
       hive_score:  hiveScore(p.rating, p.review_count || 0, p.sources?.length > 1),
     }))
     .sort((a, b) => b.hive_score - a.hive_score);
-  console.log(`🐝 Ranked ${scored.length} places, returning top ${Math.min(scored.length, 5)}`);
+
+  console.log(`🐝 Ranked ${scored.length} places → returning top ${Math.min(scored.length, 5)}`);
   return scored.slice(0, 5);
 }
 
-// ── Opening hours ─────────────────────────────────────────────
+// ── Opening Hours (Google Place Details) ─────────────────────
 async function fetchOpeningHours(placeId) {
   const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
   url.searchParams.set("place_id", placeId);
@@ -384,17 +367,19 @@ async function fetchOpeningHours(placeId) {
   return { is_open_now: isOpenNow, closing_time: closingTime, today_hours: todayText, business_status: bs || null };
 }
 
-// ── Haversine ─────────────────────────────────────────────────
+// ── Haversine Distance ────────────────────────────────────────
 function haversineKm(lat1, lng1, lat2, lng2) {
-  const R = 6371, dLat = toRad(lat2-lat1), dLng = toRad(lng2-lng1);
-  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
-  return +(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
+  const R    = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a    = Math.sin(dLat/2)**2
+             + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return +(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
 }
+
 function toRad(deg) { return deg * Math.PI / 180; }
 
 // ── Start ─────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n🐝 Bee's Knees server running → http://localhost:${PORT}`);
-  console.log(`   Google key : ${GOOGLE_API_KEY.slice(0, 10)}…`);
-  console.log(`   FSQ key    : ${FOURSQUARE_API_KEY.slice(0, 10)}…\n`);
+  console.log(`\n🐝 Bee's Knees server running → http://localhost:${PORT}\n`);
 });

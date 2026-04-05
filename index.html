@@ -15,7 +15,7 @@
       --amber:      #E8830A;
       --comb:       #FFF3D4;
       --comb-dark:  #FFE5A0;
-      --comb-mid:   #FFDД70;
+      --comb-mid:   #FFD470;
       --dark:       #1A1000;
       --mid:        #4A3200;
       --soft:       #7A5C1E;
@@ -57,14 +57,6 @@
 
     /* ── Header ── */
     header { text-align: center; margin-bottom: 2.5rem; }
-
-    .hive-logo {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      margin-bottom: 0.5rem;
-    }
 
     /* ── Hive logo layout ── */
     .hive-logo {
@@ -880,6 +872,41 @@
       font-weight: 600;
     }
 
+    /* ── Partner ─────────────────────────────────────────────── */
+    .partner-bar {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: var(--white);
+      border-radius: 18px;
+      border: 1.5px solid rgba(245,166,35,0.18);
+      box-shadow: 0 3px 16px var(--shadow);
+    }
+    .partner-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--soft);
+      margin-bottom: 0.6rem;
+    }
+    .partner-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .partner-link:hover { transform: translateY(-2px); opacity: 0.85; }
+    .partner-pint { font-size: 2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+    .partner-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+    .partner-name span { color: var(--deep-honey); }
+
     /* ── Footer ── */
     footer {
       text-align: center;
@@ -1060,6 +1087,17 @@
     <div class="feedback-success" id="feedback-success">
       ✅ Thanks for the buzz! We'll take a look. 🐝
     </div>
+  </div>
+
+</div>
+
+  <!-- Partner -->
+  <div class="partner-bar">
+    <div class="partner-label">🤝 Proud Partners Of</div>
+    <a href="https://www.pintstops.com" target="_blank" rel="noopener" class="partner-link">
+      <span class="partner-pint">🍺</span>
+      <span class="partner-name">Pint<span>Stops</span>.com</span>
+    </a>
   </div>
 
 </div>
@@ -1395,7 +1433,7 @@ function renderResults(rawPlaces, query) {
           </button>
           <span class="waggle-count" id="waggle-count-${escHtml(place.place_id)}"></span>
         </div>
-        <a class="maps-link" href="${place.maps_url}" target="_blank" rel="noopener">🗺️ Open in Maps</a>
+        <a class="maps-link" href="${safeMapsUrl(place)}" target="_blank" rel="noopener">🗺️ Open in Maps</a>
         ${(selectedQuery.includes("hotel") || queryInput.value.toLowerCase().includes("hotel")) ? `<a class="booking-link" href="https://www.booking.com/searchresults.html?ss=${encodeURIComponent(place.name + " " + (place.vicinity || ""))}&aid=${BOOKING_CID}&lang=en-gb&sb=1&src=searchresults" target="_blank" rel="noopener">🏨 Book on Booking.com</a>` : ""}
       </div>
     `;
@@ -1434,7 +1472,7 @@ function renderResults(rawPlaces, query) {
           ${place.description ? `<div class="mention-description">📌 ${escHtml(place.description)}</div>` : ""}
           <div style="font-size:0.68rem;color:var(--soft);font-style:italic;margin-top:0.2rem;">${MENTION_LABELS[i]}</div>
         </div>
-        <a class="mention-link" href="${place.maps_url}" target="_blank" rel="noopener">🗺️ Maps</a>
+        <a class="mention-link" href="${safeMapsUrl(place)}" target="_blank" rel="noopener">🗺️ Maps</a>
       `;
       mentionsEl.appendChild(card);
     });
@@ -1463,9 +1501,17 @@ function renderHours(place) {
 function capitalise(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
 
 function escHtml(str) {
+  if (!str) return "";
   const d = document.createElement("div");
   d.textContent = str;
   return d.innerHTML;
+}
+
+function safeMapsUrl(place) {
+  if (place.maps_url) return place.maps_url;
+  // Fallback — search by name and vicinity
+  const q = encodeURIComponent((place.name || "") + " " + (place.vicinity || ""));
+  return `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 
 // ── Auto-run search from URL params ──────────────────────────
