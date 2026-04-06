@@ -379,7 +379,23 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 
 function toRad(deg) { return deg * Math.PI / 180; }
 
+// ── Keep-alive ping ──────────────────────────────────────────
+// Pings own /health endpoint every 14 minutes to prevent
+// Render free tier from spinning down
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+
+function keepAlive() {
+  if (!RENDER_URL) return; // only runs in production on Render
+  fetch(`${RENDER_URL}/health`)
+    .then(() => console.log("🐝 Keep-alive ping sent"))
+    .catch(e => console.warn("Keep-alive failed:", e.message));
+}
+
+setInterval(keepAlive, 14 * 60 * 1000); // every 14 minutes
+
 // ── Start ─────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n🐝 Bee's Knees server running → http://localhost:${PORT}\n`);
+  // Send first ping after 1 minute to let server warm up
+  setTimeout(keepAlive, 60 * 1000);
 });
