@@ -1141,6 +1141,31 @@ const searchBtn     = document.getElementById("search-btn");
 const statusDiv     = document.getElementById("status");
 const resultsDiv    = document.getElementById("results");
 
+// ── Easter egg — 5 rapid clicks on the bee ───────────────────
+let beeClickCount = 0;
+let beeClickTimer = null;
+
+document.getElementById("header-bee").addEventListener("click", () => {
+  beeClickCount++;
+  clearTimeout(beeClickTimer);
+
+  if (beeClickCount >= 5) {
+    beeClickCount = 0;
+    // Little celebration before opening
+    const bee = document.getElementById("header-bee");
+    bee.style.transition = "transform 0.1s";
+    bee.style.transform  = "scale(2) rotate(20deg)";
+    setTimeout(() => {
+      bee.style.transform = "scale(1) rotate(0deg)";
+      window.open("https://visitbelfast.com/", "_blank");
+    }, 400);
+    return;
+  }
+
+  // Reset if clicks stop within 1 second
+  beeClickTimer = setTimeout(() => { beeClickCount = 0; }, 1000);
+});
+
 // ── GPS ───────────────────────────────────────────────────────
 gpsBtn.addEventListener("click", () => {
   if (!navigator.geolocation) return showError("Geolocation not supported.");
