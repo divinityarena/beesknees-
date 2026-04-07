@@ -1228,35 +1228,40 @@ document.getElementById("dist-row").addEventListener("click", (e) => {
 
 // ── Geocode via Google — works for IE, UK and worldwide ───────
 async function geocodeLocation(text) {
-  // Detect Irish Eircode (e.g. D02 XY45, V94 X2K7) or NI postcode (BT...)
-  const isEircode  = /^[A-Z]\d{2}\s*[A-Z0-9]{4}$/i.test(text.trim());
-  const isNIcode   = /^BT\d/i.test(text.trim());
-  const region     = isEircode ? "ie" : "gb"; // bias towards correct country
+  const isEircode = /^[A-Z]\d{2}\s*[A-Z0-9]{4}$/i.test(text.trim());
+  const region    = isEircode ? "ie" : "gb";
 
   const url  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&region=${region}&key=${GOOGLE_API_KEY}`;
   const res  = await fetch(url);
   const data = await res.json();
 
-  if (data.status === "REQUEST_DENIED")
-    throw new Error("Geocoding API not enabled — check console.cloud.google.com → APIs → Geocoding API.");
+  // Log full response for debugging
+  console.log("📍 Geocode response:", data.status, data.error_message || "");
 
-  // If region-biased search found nothing, try without bias (works globally)
-  if (data.status !== "OK" || !data.results.length) {
-    const fallbackUrl  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&key=${GOOGLE_API_KEY}`;
-    const fallbackRes  = await fetch(fallbackUrl);
-    const fallbackData = await fallbackRes.json();
+  if (data.status === "REQUEST_DENIED") {
+    throw new Error(`Location lookup blocked by Google (REQUEST_DENIED). Error: ${data.error_message || "No details"}. Check Geocoding API is enabled at console.cloud.google.com`);
+  }
 
-    if (fallbackData.status !== "OK" || !fallbackData.results.length)
-      throw new Error(`Couldn't find "${text}". Try your full postcode or town name.`);
+  if (data.status === "OK" && data.results.length) {
+    const { lat, lng } = data.results[0].geometry.location;
+    console.log(`📍 ${text} → ${data.results[0].formatted_address} (${lat}, ${lng})`);
+    return { lat, lng };
+  }
 
+  // Fallback — try without region bias
+  const fallbackUrl  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&key=${GOOGLE_API_KEY}`;
+  const fallbackRes  = await fetch(fallbackUrl);
+  const fallbackData = await fallbackRes.json();
+
+  console.log("📍 Fallback geocode response:", fallbackData.status, fallbackData.error_message || "");
+
+  if (fallbackData.status === "OK" && fallbackData.results.length) {
     const { lat, lng } = fallbackData.results[0].geometry.location;
     console.log(`📍 ${text} → ${fallbackData.results[0].formatted_address} (${lat}, ${lng})`);
     return { lat, lng };
   }
 
-  const { lat, lng } = data.results[0].geometry.location;
-  console.log(`📍 ${text} → ${data.results[0].formatted_address} (${lat}, ${lng})`);
-  return { lat, lng };
+  throw new Error(`Couldn't find "${text}". Try your full postcode or town name.`);
 }
 
 // ── Hive Score™ (mirrors server formula exactly) ─────────────
