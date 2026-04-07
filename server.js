@@ -117,6 +117,43 @@ app.get("/votes", async (req, res) => {
   }
 });
 
+// ── Geocode endpoint ─────────────────────────────────────────
+// GET /geocode?address=Belfast
+// Proxies Google Geocoding API server-side so referrer restrictions don't block it
+app.get("/geocode", async (req, res) => {
+  const { address } = req.query;
+  if (!address) return res.status(400).json({ error: "Missing address param" });
+
+  const isEircode = /^[A-Z]\d{2}\s*[A-Z0-9]{4}$/i.test(address.trim());
+  const region    = isEircode ? "ie" : "gb";
+
+  try {
+    const url  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&region=${region}&key=${GOOGLE_API_KEY}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (data.status === "OK" && data.results.length) {
+      const { lat, lng } = data.results[0].geometry.location;
+      return res.json({ lat, lng, formatted: data.results[0].formatted_address });
+    }
+
+    // Fallback without region bias
+    const url2  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`;
+    const resp2 = await fetch(url2);
+    const data2 = await resp2.json();
+
+    if (data2.status === "OK" && data2.results.length) {
+      const { lat, lng } = data2.results[0].geometry.location;
+      return res.json({ lat, lng, formatted: data2.results[0].formatted_address });
+    }
+
+    res.status(404).json({ error: `Could not find "${address}". Try your full postcode or town name.` });
+
+  } catch (e) {
+    res.status(500).json({ error: "Geocoding failed: " + e.message });
+  }
+});
+
 // ── Main Search Endpoint ──────────────────────────────────────
 // GET /google-places?lat=XX&lng=YY&query=pizza&radius=3000
 app.get("/google-places", async (req, res) => {

@@ -1122,7 +1122,7 @@
 <script>
 // ── Config ────────────────────────────────────────────────────
 const API_BASE       = window.location.origin;
-const GOOGLE_API_KEY = "AIzaSyDY__ahMPXSRnHWPWQqA3MTer2NobLxJAw";
+// Google API key removed from frontend — geocoding now handled server-side
 
 // ── State ─────────────────────────────────────────────────────
 let userLat = null, userLng = null;
@@ -1228,40 +1228,17 @@ document.getElementById("dist-row").addEventListener("click", (e) => {
 
 // ── Geocode via Google — works for IE, UK and worldwide ───────
 async function geocodeLocation(text) {
-  const isEircode = /^[A-Z]\d{2}\s*[A-Z0-9]{4}$/i.test(text.trim());
-  const region    = isEircode ? "ie" : "gb";
-
-  const url  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&region=${region}&key=${GOOGLE_API_KEY}`;
-  const res  = await fetch(url);
+  // Geocoding is proxied through our server to avoid Google's
+  // referrer restriction blocking browser-side API calls
+  const res  = await fetch(`${API_BASE}/geocode?address=${encodeURIComponent(text)}`);
   const data = await res.json();
 
-  // Log full response for debugging
-  console.log("📍 Geocode response:", data.status, data.error_message || "");
-
-  if (data.status === "REQUEST_DENIED") {
-    throw new Error(`Location lookup blocked by Google (REQUEST_DENIED). Error: ${data.error_message || "No details"}. Check Geocoding API is enabled at console.cloud.google.com`);
+  if (!res.ok) {
+    throw new Error(data.error || `Couldn't find "${text}". Try your full postcode or town name.`);
   }
 
-  if (data.status === "OK" && data.results.length) {
-    const { lat, lng } = data.results[0].geometry.location;
-    console.log(`📍 ${text} → ${data.results[0].formatted_address} (${lat}, ${lng})`);
-    return { lat, lng };
-  }
-
-  // Fallback — try without region bias
-  const fallbackUrl  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(text)}&key=${GOOGLE_API_KEY}`;
-  const fallbackRes  = await fetch(fallbackUrl);
-  const fallbackData = await fallbackRes.json();
-
-  console.log("📍 Fallback geocode response:", fallbackData.status, fallbackData.error_message || "");
-
-  if (fallbackData.status === "OK" && fallbackData.results.length) {
-    const { lat, lng } = fallbackData.results[0].geometry.location;
-    console.log(`📍 ${text} → ${fallbackData.results[0].formatted_address} (${lat}, ${lng})`);
-    return { lat, lng };
-  }
-
-  throw new Error(`Couldn't find "${text}". Try your full postcode or town name.`);
+  console.log(`📍 ${text} → ${data.formatted} (${data.lat}, ${data.lng})`);
+  return { lat: data.lat, lng: data.lng };
 }
 
 // ── Hive Score™ (mirrors server formula exactly) ─────────────
