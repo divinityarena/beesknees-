@@ -1521,9 +1521,12 @@ function escHtml(str) {
 }
 
 function safeMapsUrl(place) {
-  if (place.maps_url) return place.maps_url;
-  // Fallback — search by name and vicinity
-  const q = encodeURIComponent((place.name || "") + " " + (place.vicinity || ""));
+  // If we have a valid maps_url that isn't the old broken format, use it
+  if (place.maps_url && !place.maps_url.includes("maps/place/?q=place_id")) {
+    return place.maps_url;
+  }
+  // Build a reliable fallback using name + address
+  const q = encodeURIComponent([(place.name || ""), (place.vicinity || "")].filter(Boolean).join(" "));
   return `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 

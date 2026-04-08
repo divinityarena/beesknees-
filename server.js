@@ -237,7 +237,7 @@ async function fetchGooglePlaces({ lat, lng, query, radius }) {
     lat:             p.geometry?.location?.lat,
     lng:             p.geometry?.location?.lng,
     place_id:        p.place_id,
-    maps_url:        `https://www.google.com/maps/place/?q=place_id:${p.place_id}`,
+    maps_url:        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}&query_place_id=${p.place_id}`,
     vicinity:        p.vicinity || "",
     description:     buildGoogleDescription(p),
   }));
