@@ -67,6 +67,16 @@ app.get("/about.html", (_req, res) => {
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("about.html not found");
 });
 
+// ── Debug endpoint (temporary) ───────────────────────────────
+app.get("/debug-key", (_req, res) => {
+  const key = process.env.GOOGLE_API_KEY || "NOT SET";
+  res.json({
+    key_prefix:  key.slice(0, 12) + "...",
+    key_length:  key.length,
+    fsq_prefix:  (process.env.FOURSQUARE_API_KEY || "NOT SET").slice(0, 8) + "...",
+  });
+});
+
 // ── Health check ──────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "🐝 The Bee's Knees server is buzzing!" });
