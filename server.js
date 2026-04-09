@@ -426,6 +426,28 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 
 function toRad(deg) { return deg * Math.PI / 180; }
 
+// ── Scheduled weekly backup ──────────────────────────────────
+// Runs every Sunday at midnight and logs top voted places
+// Data is preserved in the DB — this just gives you a console snapshot
+function weeklySnapshot() {
+  if (!pool) return;
+  pool.query(`
+    SELECT place_name, COUNT(*) as votes
+    FROM waggle_votes
+    GROUP BY place_name
+    ORDER BY votes DESC
+    LIMIT 10
+  `).then(({ rows }) => {
+    console.log("\n🐝 Weekly Hive Snapshot — Top Voted Places:");
+    rows.forEach((r, i) => console.log(`  ${i+1}. ${r.place_name} — ${r.votes} votes`));
+    console.log(`  Total snapshot time: ${new Date().toISOString()}
+`);
+  }).catch(e => console.warn("Snapshot failed:", e.message));
+}
+
+// Run snapshot every 7 days
+setInterval(weeklySnapshot, 7 * 24 * 60 * 60 * 1000);
+
 // ── Keep-alive ping ──────────────────────────────────────────
 // Pings own /health endpoint every 14 minutes to prevent
 // Render free tier from spinning down

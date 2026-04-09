@@ -1341,7 +1341,7 @@ searchBtn.addEventListener("click", async () => {
     renderResults(data.results, query);
     statusDiv.style.display = "none";
 
-    // Load waggle votes for displayed results
+    // Load waggle votes for ALL displayed results including honourable mentions
     const placeIds = data.results.map(p => p.place_id).filter(Boolean);
     loadWaggleVotes(placeIds);
 
@@ -1484,6 +1484,13 @@ function renderResults(rawPlaces, query) {
           </div>
           ${place.description ? `<div class="mention-description">📌 ${escHtml(place.description)}</div>` : ""}
           <div style="font-size:0.68rem;color:var(--soft);font-style:italic;margin-top:0.2rem;">${MENTION_LABELS[i]}</div>
+          <div class="waggle-row" style="margin-top:0.4rem;">
+            <button class="waggle-btn" id="waggle-${escHtml(place.place_id)}"
+              onclick="castWaggle('${escHtml(place.place_id)}', '${escHtml(place.name)}', this)">
+              🐝 This is the Bee's Knees!
+            </button>
+            <span class="waggle-count" id="waggle-count-${escHtml(place.place_id)}"></span>
+          </div>
         </div>
         <a class="mention-link" href="${safeMapsUrl(place)}" target="_blank" rel="noopener">🗺️ Maps</a>
       `;
