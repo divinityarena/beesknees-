@@ -67,6 +67,11 @@ app.get("/about.html", (_req, res) => {
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("about.html not found");
 });
 
+app.get("/profile", (_req, res) => {
+  const p = path.join(HTML_DIR, "profile.html");
+  fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("profile.html not found");
+});
+
 // ── Debug endpoint (temporary) ───────────────────────────────
 app.get("/debug-key", (_req, res) => {
   const key = process.env.GOOGLE_API_KEY || "NOT SET";

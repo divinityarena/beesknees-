@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile · The Bee's Knees 🐝</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --honey:      #F5A623;
+      --deep-honey: #C67C00;
+      --amber:      #E8830A;
+      --comb:       #FFF3D4;
+      --comb-dark:  #FFE5A0;
+      --dark:       #1A1000;
+      --mid:        #4A3200;
+      --soft:       #7A5C1E;
+      --white:      #FFFDF5;
+      --shadow:     rgba(90,50,0,0.13);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--comb);
+      color: var(--dark);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 0 L56 16 L56 48 L28 64 L0 48 L0 16Z' fill='none' stroke='%23F5A623' stroke-width='0.6' stroke-opacity='0.18'/%3E%3C/svg%3E"),
+        radial-gradient(ellipse at 15% 0%, rgba(245,166,35,0.16) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 5rem;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--deep-honey);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .nav-back {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--deep-honey);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border: 1.5px solid var(--honey);
+      border-radius: 50px;
+      padding: 0.45rem 1.1rem;
+      background: var(--white);
+      transition: all 0.2s;
+      box-shadow: 0 2px 10px rgba(200,120,0,0.15);
+    }
+    .nav-back:hover { background: var(--honey); color: var(--dark); transform: translateY(-2px); }
+
+    /* Not logged in state */
+    .not-logged-in {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: var(--white);
+      border-radius: 24px;
+      border: 1.5px solid rgba(245,166,35,0.18);
+      box-shadow: 0 4px 28px var(--shadow);
+    }
+    .not-logged-in .bee { font-size: 3rem; display: block; margin-bottom: 0.75rem; }
+    .not-logged-in h2 { font-family: 'Playfair Display', serif; color: var(--deep-honey); font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .not-logged-in p { font-size: 0.88rem; color: var(--soft); margin-bottom: 1.25rem; }
+
+    /* Profile header */
+    .profile-header {
+      background: linear-gradient(135deg, var(--deep-honey), var(--amber));
+      border-radius: 24px;
+      padding: 1.75rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 20px rgba(200,120,0,0.3);
+    }
+    .avatar {
+      width: 72px;
+      height: 72px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      margin: 0 auto 0.75rem;
+      border: 2px solid rgba(255,255,255,0.4);
+    }
+    .profile-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--white);
+      margin-bottom: 0.2rem;
+    }
+    .profile-email { font-size: 0.82rem; color: rgba(255,255,255,0.75); }
+    .profile-since { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 0.3rem; }
+
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: 18px;
+      padding: 1.1rem;
+      text-align: center;
+      border: 1.5px solid rgba(245,166,35,0.18);
+      box-shadow: 0 3px 16px var(--shadow);
+    }
+    .stat-number { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; color: var(--deep-honey); }
+    .stat-label { font-size: 0.75rem; color: var(--soft); margin-top: 0.2rem; }
+
+    /* Section cards */
+    .section-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      border: 1.5px solid rgba(245,166,35,0.18);
+      box-shadow: 0 3px 16px var(--shadow);
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--deep-honey);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Vote list */
+    .vote-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--comb-dark);
+      gap: 0.75rem;
+    }
+    .vote-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .vote-name { font-size: 0.9rem; font-weight: 600; color: var(--dark); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vote-date { font-size: 0.72rem; color: var(--soft); flex-shrink: 0; }
+    .vote-badge { font-size: 0.7rem; background: linear-gradient(135deg, var(--honey), var(--amber)); color: var(--dark); border-radius: 20px; padding: 0.15rem 0.5rem; font-weight: 600; flex-shrink: 0; }
+
+    .empty-state { text-align: center; padding: 1.5rem 0; color: var(--soft); font-size: 0.88rem; font-style: italic; }
+
+    /* Sign out button */
+    .signout-btn {
+      width: 100%;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--soft);
+      background: none;
+      border: 1.5px solid var(--comb-dark);
+      border-radius: 14px;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .signout-btn:hover { border-color: var(--honey); color: var(--deep-honey); background: var(--comb); }
+
+    footer { text-align: center; margin-top: 3rem; font-size: 0.75rem; color: var(--soft); }
+    .footer-main { opacity: 0.6; margin-bottom: 0.3rem; }
+    .footer-copy { font-weight: 600; color: var(--deep-honey); opacity: 0.85; }
+    .footer-copy::before { content: "🐝 "; }
+
+    .loading { text-align: center; padding: 2rem; color: var(--soft); font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="nav">
+    <a href="/" class="nav-logo">🐝 The Bee's Knees</a>
+    <a href="/" class="nav-back">🍯 Back to the Hive</a>
+  </nav>
+
+  <div id="loading" class="loading">🐝 Loading your hive profile…</div>
+
+  <!-- Not logged in -->
+  <div id="not-logged-in" style="display:none;">
+    <div class="not-logged-in">
+      <span class="bee">🔒</span>
+      <h2>Join the Hive First</h2>
+      <p>You need to be signed in to view your profile. Head back to the app and click Sign In.</p>
+      <a href="/" style="display:inline-block; background:linear-gradient(135deg,var(--honey),var(--amber)); color:var(--dark); font-family:'Playfair Display',serif; font-weight:700; font-size:0.95rem; padding:0.75rem 1.5rem; border-radius:14px; text-decoration:none; box-shadow:0 3px 14px rgba(200,120,0,0.3);">🐝 Back to the Hive</a>
+    </div>
+  </div>
+
+  <!-- Logged in profile -->
+  <div id="profile-content" style="display:none;">
+
+    <div class="profile-header">
+      <div class="avatar">🐝</div>
+      <div class="profile-name" id="profile-name">—</div>
+      <div class="profile-email" id="profile-email">—</div>
+      <div class="profile-since" id="profile-since">—</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-votes">0</div>
+        <div class="stat-label">🐝 Places Agreed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-days">0</div>
+        <div class="stat-label">🍯 Days in the Hive</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">🐝 Places You've Agreed Are the Bee's Knees</div>
+      <div id="votes-list"><div class="empty-state">You haven't voted on any places yet — start scouting!</div></div>
+    </div>
+
+    <div class="section-card">
+      <button class="signout-btn" id="signout-btn">Sign Out of the Hive</button>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
+  <div class="footer-copy">&copy; 2025 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
+</footer>
+
+<script>
+const SUPABASE_URL  = "https://hwpcowjejebhapgqhnpl.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cGNvd2plamViaGFwZ3FobnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzA4NjgsImV4cCI6MjA5MTMwNjg2OH0.3dqzEA_Qw8RbJOWUNMZIFErVFRqy49BFRAbP8Bk6klw";
+const supabase      = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+async function loadProfile() {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  document.getElementById("loading").style.display = "none";
+
+  if (!session) {
+    document.getElementById("not-logged-in").style.display = "block";
+    return;
+  }
+
+  const user = session.user;
+  document.getElementById("profile-content").style.display = "block";
+
+  // Name and email
+  const name  = user.user_metadata?.display_name || user.email.split("@")[0];
+  const since = new Date(user.created_at);
+  const days  = Math.floor((Date.now() - since) / (1000 * 60 * 60 * 24));
+
+  document.getElementById("profile-name").textContent  = name;
+  document.getElementById("profile-email").textContent = user.email;
+  document.getElementById("profile-since").textContent = `Member since ${since.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`;
+  document.getElementById("stat-days").textContent     = days;
+
+  // Load votes from Supabase
+  const { data: votes, error } = await supabase
+    .from("user_votes")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  document.getElementById("stat-votes").textContent = votes?.length || 0;
+
+  const list = document.getElementById("votes-list");
+  if (votes && votes.length > 0) {
+    list.innerHTML = votes.map(v => `
+      <div class="vote-item">
+        <div class="vote-name" title="${escHtml(v.place_name)}">${escHtml(v.place_name)}</div>
+        <div class="vote-date">${new Date(v.created_at).toLocaleDateString("en-GB")}</div>
+        <div class="vote-badge">🐝 Agreed</div>
+      </div>
+    `).join("");
+  } else {
+    list.innerHTML = `<div class="empty-state">You haven't voted yet — start scouting the hive!</div>`;
+  }
+
+  // Sign out
+  document.getElementById("signout-btn").addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  });
+}
+
+function escHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str || "";
+  return d.innerHTML;
+}
+
+loadProfile();
+</script>
+</body>
+</html>

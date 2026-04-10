@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Bee's Knees 🐝</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -929,6 +930,106 @@
       .pill-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
+    /* ── Auth button ─────────────────────────────────────────── */
+    .auth-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--dark);
+      background: linear-gradient(135deg, var(--honey), var(--amber));
+      text-decoration: none;
+      border: none;
+      border-radius: 50px;
+      padding: 0.45rem 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 10px rgba(200,120,0,0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(200,120,0,0.45); }
+    .auth-btn.logged-in {
+      background: var(--white);
+      color: var(--deep-honey);
+      border: 1.5px solid var(--honey);
+      box-shadow: 0 2px 10px rgba(200,120,0,0.15);
+    }
+    .auth-btn.logged-in:hover { background: var(--comb); transform: translateY(-2px); }
+
+    .auth-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26,16,0,0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .auth-overlay.open { display: flex; }
+
+    .auth-modal {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 2rem 1.75rem;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 40px rgba(26,16,0,0.25);
+      border: 1.5px solid rgba(245,166,35,0.2);
+      animation: slideUp 0.3s ease;
+      position: relative;
+    }
+    .auth-modal h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--deep-honey);
+      margin-bottom: 0.3rem;
+    }
+    .auth-modal p { font-size: 0.85rem; color: var(--soft); margin-bottom: 1.25rem; line-height: 1.5; }
+    .auth-input {
+      width: 100%;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--comb-dark);
+      border-radius: 14px;
+      background: var(--comb);
+      color: var(--dark);
+      outline: none;
+      margin-bottom: 0.75rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+    .auth-input:focus { border-color: var(--honey); box-shadow: 0 0 0 3px rgba(245,166,35,0.18); }
+    .auth-submit {
+      width: 100%;
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--dark);
+      background: linear-gradient(135deg, var(--honey), var(--amber));
+      border: none;
+      border-radius: 14px;
+      padding: 0.85rem;
+      cursor: pointer;
+      box-shadow: 0 3px 14px rgba(200,120,0,0.3);
+      transition: transform 0.15s;
+      margin-bottom: 0.75rem;
+    }
+    .auth-submit:hover { transform: translateY(-1px); }
+    .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .auth-close {
+      position: absolute; top: 1rem; right: 1.25rem;
+      background: none; border: none; font-size: 1.3rem;
+      cursor: pointer; color: var(--soft);
+    }
+    .auth-success { text-align: center; padding: 1rem 0; }
+    .auth-success .bee { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+    .auth-success h3 { font-family: 'Playfair Display', serif; color: var(--deep-honey); font-size: 1.1rem; margin-bottom: 0.4rem; }
+    .auth-success p { font-size: 0.85rem; color: var(--soft); }
+
     /* ── Nav pill ── */
     .nav-pill {
       font-family: 'DM Sans', sans-serif;
@@ -959,9 +1060,35 @@
 <body>
 <div class="app">
 
-  <nav style="display:flex; justify-content:flex-end; margin-bottom:0.75rem;">
+  <nav style="display:flex; justify-content:flex-end; gap:0.5rem; margin-bottom:0.75rem; align-items:center;">
+    <button class="auth-btn" id="auth-btn">🐝 Sign In</button>
     <a href="/about" class="nav-pill">🐝 Hive Info</a>
   </nav>
+
+  <!-- Auth Modal -->
+  <div class="auth-overlay" id="auth-overlay">
+    <div class="auth-modal">
+      <button class="auth-close" id="auth-close">✕</button>
+      <div id="auth-form-view">
+        <h2>Join the Hive 🐝</h2>
+        <p>Enter your email and we'll send you a magic link — no password needed.</p>
+        <input class="auth-input" type="email" id="auth-email" placeholder="your@email.com" />
+        <button class="auth-submit" id="auth-submit">🍯 Send Magic Link</button>
+      </div>
+      <div id="auth-success-view" class="auth-success" style="display:none;">
+        <span class="bee">🐝</span>
+        <h3>Check your inbox!</h3>
+        <p>We've sent a magic link to your email. Click it to join the hive.</p>
+      </div>
+      <div id="auth-loggedin-view" style="display:none; text-align:center; padding:1rem 0;">
+        <span style="font-size:2rem; display:block; margin-bottom:0.5rem;">🐝</span>
+        <div id="auth-username" style="font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--deep-honey); font-weight:700; margin-bottom:0.3rem;"></div>
+        <div style="font-size:0.8rem; color:var(--soft); margin-bottom:1rem;">Welcome to the hive!</div>
+        <a href="/profile" style="display:block; background:var(--comb); border:1.5px solid var(--comb-dark); border-radius:12px; padding:0.6rem; font-size:0.85rem; color:var(--deep-honey); font-weight:600; text-decoration:none; margin-bottom:0.6rem;">🍯 View My Profile</a>
+        <button id="auth-logout" style="width:100%; background:none; border:1.5px solid var(--comb-dark); border-radius:12px; padding:0.6rem; font-size:0.85rem; color:var(--soft); cursor:pointer; font-family:'DM Sans',sans-serif;">Sign Out</button>
+      </div>
+    </div>
+  </div>
 
   <header>
     <div class="hive-logo">
@@ -1122,6 +1249,89 @@
 <script>
 // ── Config ────────────────────────────────────────────────────
 const API_BASE       = window.location.origin;
+
+// ── Supabase Auth ─────────────────────────────────────────────
+const SUPABASE_URL  = "https://hwpcowjejebhapgqhnpl.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cGNvd2plamViaGFwZ3FobnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzA4NjgsImV4cCI6MjA5MTMwNjg2OH0.3dqzEA_Qw8RbJOWUNMZIFErVFRqy49BFRAbP8Bk6klw";
+const supabase      = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentUser = null;
+
+// ── Auth UI helpers ───────────────────────────────────────────
+const authBtn     = document.getElementById("auth-btn");
+const authOverlay = document.getElementById("auth-overlay");
+
+function updateAuthUI(user) {
+  currentUser = user;
+  if (user) {
+    const name = user.user_metadata?.display_name || user.email.split("@")[0];
+    authBtn.textContent = `🐝 ${name}`;
+    authBtn.classList.add("logged-in");
+    document.getElementById("auth-username").textContent = name;
+    // Update waggle buttons
+    document.querySelectorAll(".waggle-btn").forEach(b => {
+      if (!b.classList.contains("voted")) b.disabled = false;
+    });
+  } else {
+    authBtn.textContent = "🐝 Sign In";
+    authBtn.classList.remove("logged-in");
+  }
+}
+
+function showAuthModal() {
+  authOverlay.classList.add("open");
+  if (currentUser) {
+    document.getElementById("auth-form-view").style.display    = "none";
+    document.getElementById("auth-success-view").style.display = "none";
+    document.getElementById("auth-loggedin-view").style.display = "block";
+  } else {
+    document.getElementById("auth-form-view").style.display    = "block";
+    document.getElementById("auth-success-view").style.display = "none";
+    document.getElementById("auth-loggedin-view").style.display = "none";
+  }
+}
+
+authBtn.addEventListener("click", showAuthModal);
+document.getElementById("auth-close").addEventListener("click", () => authOverlay.classList.remove("open"));
+authOverlay.addEventListener("click", e => { if (e.target === authOverlay) authOverlay.classList.remove("open"); });
+
+// Magic link send
+document.getElementById("auth-submit").addEventListener("click", async () => {
+  const email  = document.getElementById("auth-email").value.trim();
+  const btn    = document.getElementById("auth-submit");
+  if (!email) return;
+  btn.disabled    = true;
+  btn.textContent = "Sending… 🐝";
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin }
+  });
+  if (error) {
+    btn.disabled    = false;
+    btn.textContent = "🍯 Send Magic Link";
+    alert("Error: " + error.message);
+  } else {
+    document.getElementById("auth-form-view").style.display    = "none";
+    document.getElementById("auth-success-view").style.display = "block";
+  }
+});
+
+// Sign out
+document.getElementById("auth-logout").addEventListener("click", async () => {
+  await supabase.auth.signOut();
+  authOverlay.classList.remove("open");
+  updateAuthUI(null);
+});
+
+// Listen for auth state changes
+supabase.auth.onAuthStateChange((_event, session) => {
+  updateAuthUI(session?.user || null);
+});
+
+// Check if already logged in on page load
+supabase.auth.getSession().then(({ data: { session } }) => {
+  if (session) updateAuthUI(session.user);
+});
 // Google API key removed from frontend — geocoding now handled server-side
 
 // ── State ─────────────────────────────────────────────────────
@@ -1441,8 +1651,9 @@ function renderResults(rawPlaces, query) {
         ${place.description ? `<div class="result-description">📌 ${escHtml(place.description)}</div>` : ""}
         <div class="waggle-row">
           <button class="waggle-btn" id="waggle-${escHtml(place.place_id)}"
-            onclick="castWaggle('${escHtml(place.place_id)}', '${escHtml(place.name)}', this)">
-            🐝 This is the Bee's Knees!
+            onclick="castWaggle('${escHtml(place.place_id)}', '${escHtml(place.name)}', this)"
+            title="${currentUser ? '' : 'Sign in to vote'}">
+            ${currentUser ? '🐝 This is the Bee's Knees!' : '🔒 Sign in to vote'}
           </button>
           <span class="waggle-count" id="waggle-count-${escHtml(place.place_id)}"></span>
         </div>
@@ -1609,6 +1820,12 @@ function updateWaggleUI(placeId, count, hasVoted) {
 }
 
 async function castWaggle(placeId, placeName, btn) {
+  // Require login to vote
+  if (!currentUser) {
+    showAuthModal();
+    return;
+  }
+
   if (voted[placeId]) return;
   btn.textContent = "🐝 Buzzing…";
   btn.disabled = true;
@@ -1617,9 +1834,21 @@ async function castWaggle(placeId, placeName, btn) {
     const res  = await fetch(`${API_BASE}/vote`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ place_id: placeId, place_name: placeName, voter_id: VOTER_ID }),
+      body:    JSON.stringify({
+        place_id:  placeId,
+        place_name: placeName,
+        voter_id:  currentUser.id, // use real user ID instead of anonymous
+      }),
     });
     const data = await res.json();
+
+    // Also save to Supabase user_votes for profile page
+    await supabase.from("user_votes").upsert({
+      user_id:    currentUser.id,
+      place_id:   placeId,
+      place_name: placeName,
+    }, { onConflict: "user_id,place_id" });
+
     voted[placeId] = true;
     localStorage.setItem("bk_voted", JSON.stringify(voted));
     updateWaggleUI(placeId, data.total, true);
