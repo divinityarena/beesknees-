@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Bee's Knees 🐝</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -1251,24 +1250,23 @@
 const API_BASE       = window.location.origin;
 
 // ── Supabase Auth ─────────────────────────────────────────────
-const SUPABASE_URL  = "https://hwpcowjejebhapgqhnpl.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cGNvd2plamViaGFwZ3FobnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzA4NjgsImV4cCI6MjA5MTMwNjg2OH0.3dqzEA_Qw8RbJOWUNMZIFErVFRqy49BFRAbP8Bk6klw";
-const supabase      = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
+// Initialised safely after page load to prevent crashes blocking all other JS
+let supabase    = null;
 let currentUser = null;
 
-// ── Auth UI helpers ───────────────────────────────────────────
-const authBtn     = document.getElementById("auth-btn");
-const authOverlay = document.getElementById("auth-overlay");
+const SUPABASE_URL  = "https://hwpcowjejebhapgqhnpl.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cGNvd2plamViaGFwZ3FobnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzA4NjgsImV4cCI6MjA5MTMwNjg2OH0.3dqzEA_Qw8RbJOWUNMZIFErVFRqy49BFRAbP8Bk6klw";
 
 function updateAuthUI(user) {
   currentUser = user;
+  const authBtn = document.getElementById("auth-btn");
+  if (!authBtn) return;
   if (user) {
     const name = user.user_metadata?.display_name || user.email.split("@")[0];
-    authBtn.textContent = `🐝 ${name}`;
+    authBtn.textContent = "🐝 " + name;
     authBtn.classList.add("logged-in");
-    document.getElementById("auth-username").textContent = name;
-    // Update waggle buttons
+    const un = document.getElementById("auth-username");
+    if (un) un.textContent = name;
     document.querySelectorAll(".waggle-btn").forEach(b => {
       if (!b.classList.contains("voted")) b.disabled = false;
     });
@@ -1279,513 +1277,89 @@ function updateAuthUI(user) {
 }
 
 function showAuthModal() {
-  authOverlay.classList.add("open");
+  const overlay = document.getElementById("auth-overlay");
+  if (!overlay) return;
+  overlay.classList.add("open");
+  const fv = document.getElementById("auth-form-view");
+  const sv = document.getElementById("auth-success-view");
+  const lv = document.getElementById("auth-loggedin-view");
   if (currentUser) {
-    document.getElementById("auth-form-view").style.display    = "none";
-    document.getElementById("auth-success-view").style.display = "none";
-    document.getElementById("auth-loggedin-view").style.display = "block";
+    if (fv) fv.style.display = "none";
+    if (sv) sv.style.display = "none";
+    if (lv) lv.style.display = "block";
   } else {
-    document.getElementById("auth-form-view").style.display    = "block";
-    document.getElementById("auth-success-view").style.display = "none";
-    document.getElementById("auth-loggedin-view").style.display = "none";
+    if (fv) fv.style.display = "block";
+    if (sv) sv.style.display = "none";
+    if (lv) lv.style.display = "none";
   }
 }
 
-authBtn.addEventListener("click", showAuthModal);
-document.getElementById("auth-close").addEventListener("click", () => authOverlay.classList.remove("open"));
-authOverlay.addEventListener("click", e => { if (e.target === authOverlay) authOverlay.classList.remove("open"); });
+function initSupabase() {
+  try {
+    if (!window.supabase) { console.warn("Supabase CDN not loaded"); return; }
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// Magic link send
-document.getElementById("auth-submit").addEventListener("click", async () => {
-  const email  = document.getElementById("auth-email").value.trim();
-  const btn    = document.getElementById("auth-submit");
-  if (!email) return;
-  btn.disabled    = true;
-  btn.textContent = "Sending… 🐝";
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.origin }
-  });
-  if (error) {
-    btn.disabled    = false;
-    btn.textContent = "🍯 Send Magic Link";
-    alert("Error: " + error.message);
-  } else {
-    document.getElementById("auth-form-view").style.display    = "none";
-    document.getElementById("auth-success-view").style.display = "block";
-  }
-});
+    // Auth button
+    const authBtn = document.getElementById("auth-btn");
+    if (authBtn) authBtn.addEventListener("click", showAuthModal);
 
-// Sign out
-document.getElementById("auth-logout").addEventListener("click", async () => {
-  await supabase.auth.signOut();
-  authOverlay.classList.remove("open");
-  updateAuthUI(null);
-});
+    // Close modal
+    const closeBtn = document.getElementById("auth-close");
+    if (closeBtn) closeBtn.addEventListener("click", () => {
+      document.getElementById("auth-overlay")?.classList.remove("open");
+    });
 
-// Listen for auth state changes
-supabase.auth.onAuthStateChange((_event, session) => {
-  updateAuthUI(session?.user || null);
-});
+    // Click outside to close
+    const overlay = document.getElementById("auth-overlay");
+    if (overlay) overlay.addEventListener("click", e => {
+      if (e.target === overlay) overlay.classList.remove("open");
+    });
 
-// Check if already logged in on page load
-supabase.auth.getSession().then(({ data: { session } }) => {
-  if (session) updateAuthUI(session.user);
-});
-// Google API key removed from frontend — geocoding now handled server-side
-
-// ── State ─────────────────────────────────────────────────────
-let userLat = null, userLng = null;
-let selectedRadius = 3000;
-let selectedQuery  = "";
-
-const MEDALS           = ["🥇", "🥈", "🥉"];
-const MENTION_ICONS    = ["🌸", "🌼"];
-const MENTION_LABELS   = ["Worthy of the Waggle Dance", "Almost Royal Jelly"];
-
-// ── DOM refs ──────────────────────────────────────────────────
-const locationInput = document.getElementById("location-input");
-const queryInput    = document.getElementById("query-input");
-const gpsBtn        = document.getElementById("gps-btn");
-const searchBtn     = document.getElementById("search-btn");
-const statusDiv     = document.getElementById("status");
-const resultsDiv    = document.getElementById("results");
-
-// ── Easter egg — 5 rapid clicks on the bee ───────────────────
-let beeClickCount = 0;
-let beeClickTimer = null;
-
-document.getElementById("header-bee").addEventListener("click", () => {
-  beeClickCount++;
-  clearTimeout(beeClickTimer);
-
-  if (beeClickCount >= 5) {
-    beeClickCount = 0;
-    // Little celebration before opening
-    const bee = document.getElementById("header-bee");
-    bee.style.transition = "transform 0.1s";
-    bee.style.transform  = "scale(2) rotate(20deg)";
-    setTimeout(() => {
-      bee.style.transform = "scale(1) rotate(0deg)";
-      window.open("https://visitbelfast.com/", "_blank");
-    }, 400);
-    return;
-  }
-
-  // Reset if clicks stop within 1 second
-  beeClickTimer = setTimeout(() => { beeClickCount = 0; }, 1000);
-});
-
-// ── GPS ───────────────────────────────────────────────────────
-gpsBtn.addEventListener("click", () => {
-  if (!navigator.geolocation) return showError("Geolocation not supported.");
-  gpsBtn.textContent = "⏳";
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
-      locationInput.value = `📡 GPS (${userLat.toFixed(4)}, ${userLng.toFixed(4)})`;
-      gpsBtn.textContent = "✅";
-    },
-    (err) => {
-      gpsBtn.textContent = "📡";
-      if (err.code === 1) {
-        showError("Location access blocked. Click the 🔒 padlock in your browser address bar → Site Settings → Location → Allow, then try again.");
-      } else if (err.code === 2) {
-        showError("Couldn't detect your location. Try typing your postcode or town instead.");
+    // Send magic link
+    const submitBtn = document.getElementById("auth-submit");
+    if (submitBtn) submitBtn.addEventListener("click", async () => {
+      const email = document.getElementById("auth-email")?.value.trim();
+      if (!email) return;
+      submitBtn.disabled    = true;
+      submitBtn.textContent = "Sending… 🐝";
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin }
+      });
+      if (error) {
+        submitBtn.disabled    = false;
+        submitBtn.textContent = "🍯 Send Magic Link";
+        alert("Error: " + error.message);
       } else {
-        showError("Location request timed out. Try typing your postcode or town instead.");
+        const fv = document.getElementById("auth-form-view");
+        const sv = document.getElementById("auth-success-view");
+        if (fv) fv.style.display = "none";
+        if (sv) sv.style.display = "block";
       }
-    },
-    { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
-  );
-});
-
-// ── Category pills ────────────────────────────────────────────
-// Handle both pill grids
-document.querySelectorAll("#pill-grid, #pill-grid-convenience").forEach(grid => {
-  grid.addEventListener("click", (e) => {
-    const pill = e.target.closest(".pill");
-    if (!pill) return;
-    document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
-    pill.classList.add("active");
-    selectedQuery    = pill.dataset.query;
-    queryInput.value = "";
-    queryInput.placeholder = pill.querySelector(".icon").textContent + " " + pill.textContent.trim().replace(/^\S+\s*/,"");
-
-    // Change button label for convenience searches
-    const isConvenience = pill.classList.contains("convenience");
-    searchBtn.innerHTML = isConvenience
-      ? "📍 Find the Nearest"
-      : "🐝 Scout the Hive";
-  });
-});
-
-queryInput.addEventListener("input", () => {
-  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
-  selectedQuery = "";
-  searchBtn.innerHTML = "🐝 Scout the Hive";
-});
-
-// ── Distance buttons ──────────────────────────────────────────
-document.getElementById("dist-row").addEventListener("click", (e) => {
-  const btn = e.target.closest(".dist-btn");
-  if (!btn) return;
-  document.querySelectorAll(".dist-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  selectedRadius = parseInt(btn.dataset.radius);
-});
-
-// ── Geocode via Google — works for IE, UK and worldwide ───────
-async function geocodeLocation(text) {
-  // Geocoding is proxied through our server to avoid Google's
-  // referrer restriction blocking browser-side API calls
-  const res  = await fetch(`${API_BASE}/geocode?address=${encodeURIComponent(text)}`);
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || `Couldn't find "${text}". Try your full postcode or town name.`);
-  }
-
-  console.log(`📍 ${text} → ${data.formatted} (${data.lat}, ${data.lng})`);
-  return { lat: data.lat, lng: data.lng };
-}
-
-// ── Hive Score™ (mirrors server formula exactly) ─────────────
-const HIVE_SCORE_MAX = Math.pow(5.0, 3.0)
-  * Math.log10(510)
-  * (1 - (1 / Math.log10(510)))
-  * 1.05;
-
-function confidence(reviews) {
-  return 1 - (1 / Math.log10(reviews + 10));
-}
-
-function calcHiveScore(rating, reviews, dualSource) {
-  const base = Math.pow(rating, 3.0)
-             * Math.log10(Math.min(reviews, 500) + 10)
-             * confidence(reviews);
-  const raw  = base * (dualSource ? 1.05 : 1.0);
-  return Math.min(Math.round((raw / HIVE_SCORE_MAX) * 100 * 10) / 10, 100);
-}
-
-function scoreAndSort(rawPlaces) {
-  return [...rawPlaces]
-    .filter(p => p.rating != null && p.rating > 0)
-    .map(p => ({
-      ...p,
-      hive_score: p.hive_score ?? calcHiveScore(
-        p.rating,
-        p.review_count || p.user_ratings_total || 0,
-        p.sources?.length > 1
-      )
-    }))
-    .sort((a, b) => b.hive_score - a.hive_score);
-}
-
-// ── Search ────────────────────────────────────────────────────
-searchBtn.addEventListener("click", async () => {
-  const query = queryInput.value.trim() || selectedQuery;
-  if (!query) return showError("Please enter what you're looking for, or tap a category.");
-
-  const locationText = locationInput.value.trim();
-
-  try {
-    if (!userLat || !userLng || !locationText.startsWith("📡")) {
-      if (!locationText) return showError("Please enter a location or use GPS.");
-      showBuzz("Scouting your location… 🗺️");
-      const coords = await geocodeLocation(locationText);
-      userLat = coords.lat;
-      userLng = coords.lng;
-    }
-  } catch (err) {
-    return showError(err.message);
-  }
-
-  showBuzz("Buzzing around the hive for the best spots… 🐝");
-  searchBtn.disabled  = true;
-  resultsDiv.innerHTML = "";
-
-  // ── Bee & flower animation sequence ──
-  const bee    = document.getElementById("header-bee");
-  const flower = document.getElementById("header-flower");
-
-  // Reset everything
-  bee.classList.remove("scouting","landing","sitting","returning");
-  flower.classList.remove("bloom","unbloom");
-  void bee.offsetWidth;
-
-  // Step 1: bee flies out (0ms)
-  bee.classList.add("scouting");
-
-  // Step 2: flower blooms (400ms)
-  setTimeout(() => {
-    flower.classList.add("bloom");
-  }, 400);
-
-  // Step 3: bee swoops in and lands on flower (700ms)
-  setTimeout(() => {
-    bee.classList.remove("scouting");
-    void bee.offsetWidth;
-    bee.classList.add("landing");
-  }, 700);
-
-  // Step 4: bee sits and wiggles on flower
-  setTimeout(() => {
-    bee.classList.remove("landing");
-    void bee.offsetWidth;
-    bee.classList.add("sitting");
-  }, 1900);
-
-  try {
-    const url  = `${API_BASE}/google-places?lat=${userLat}&lng=${userLng}&query=${encodeURIComponent(query)}&radius=${selectedRadius}`;
-    const res  = await fetch(url);
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.error || "Server error");
-    if (!data.results || data.results.length === 0) {
-      showError("No spots found nearby. Try a larger radius or different search. 🍯");
-      return;
-    }
-
-    renderResults(data.results, query);
-    statusDiv.style.display = "none";
-
-    // Load waggle votes for ALL displayed results including honourable mentions
-    const placeIds = data.results.map(p => p.place_id).filter(Boolean);
-    loadWaggleVotes(placeIds);
-
-    // Bee takes off and flower fades
-    const bee    = document.getElementById("header-bee");
-    const flower = document.getElementById("header-flower");
-    bee.classList.remove("sitting");
-    void bee.offsetWidth;
-    bee.classList.add("returning");
-    flower.classList.remove("bloom");
-    flower.classList.add("unbloom");
-    setTimeout(() => {
-      bee.classList.remove("returning");
-      flower.classList.remove("unbloom");
-    }, 900);
-  } catch (err) {
-    showError("Couldn't reach the hive server. Make sure Docker is running. 🐝");
-    console.error(err);
-  } finally {
-    searchBtn.disabled = false;
-  }
-});
-
-// ── Render ────────────────────────────────────────────────────
-function renderResults(rawPlaces, query) {
-  resultsDiv.innerHTML = "";
-
-  // Definitive sort — highest score first
-  const sorted  = scoreAndSort(rawPlaces);
-  const top3    = sorted.slice(0, 3);
-  const honourable = sorted.slice(3, 5);
-
-  // Heading
-  const heading = document.createElement("div");
-  heading.className = "results-heading";
-  heading.innerHTML = `
-    <h2>🏆 The Best ${capitalise(query)} Near You</h2>
-    <p>🍯 Top picks within ${(selectedRadius / 1000).toFixed(0)} km · Ranked by the hive</p>
-  `;
-  resultsDiv.appendChild(heading);
-
-  // Top 3 podium
-  // Share this search button
-  const shareRow = document.createElement("div");
-  shareRow.style.cssText = "text-align:center; margin-bottom:1rem;";
-  const shareSearchBtn = document.createElement("button");
-  shareSearchBtn.className = "share-search-btn";
-  shareSearchBtn.id = "share-search-btn";
-  shareSearchBtn.innerHTML = "🔗 Share these results";
-  shareSearchBtn.addEventListener("click", () => {
-    const params = new URLSearchParams({
-      q:      queryInput.value.trim() || selectedQuery,
-      lat:    userLat,
-      lng:    userLng,
-      radius: selectedRadius,
-    });
-    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      shareSearchBtn.textContent = "✅ Link copied!";
-      shareSearchBtn.classList.add("copied");
-      setTimeout(() => {
-        shareSearchBtn.innerHTML = "🔗 Share these results";
-        shareSearchBtn.classList.remove("copied");
-      }, 2500);
-    });
-  });
-  shareRow.appendChild(shareSearchBtn);
-  resultsDiv.appendChild(shareRow);
-
-  const podium = document.createElement("div");
-  podium.className = "podium";
-
-  top3.forEach((place, i) => {
-    const card = document.createElement("div");
-    card.className = `result-card rank-${i + 1}`;
-
-    const reviews    = place.review_count || place.user_ratings_total || 0;
-    const reviewsStr = reviews ? `<span>${reviews.toLocaleString()} reviews</span>` : "";
-    const distStr    = place.distance_km != null ? `<span>📍 ${place.distance_km} km away</span>` : "";
-    const dualBadge  = place.sources?.length > 1
-      ? `<div class="dual-badge">🐝 Verified by both sources</div>` : "";
-
-    card.innerHTML = `
-      <div class="medal">${MEDALS[i]}</div>
-      <div class="result-info">
-        <div class="result-name" title="${escHtml(place.name)}">${escHtml(place.name)}</div>
-        <div class="result-meta">
-          <span class="stars">⭐ ${place.rating}</span>
-          ${reviewsStr}
-          ${distStr}
-        </div>
-        <div class="hive-score-badge${i === 0 ? ' hive-score-gold' : ''}">
-          ${i === 0 ? '👑 Golden Honey Pick · ' : '🍯 '}Hive Score: ${place.hive_score}/100
-        </div>
-        ${renderHours(place)}
-        ${dualBadge}
-        ${place.description ? `<div class="result-description">📌 ${escHtml(place.description)}</div>` : ""}
-        <div class="waggle-row">
-          <button class="waggle-btn" id="waggle-${escHtml(place.place_id)}"
-            onclick="castWaggle('${escHtml(place.place_id)}', '${escHtml(place.name)}', this)"
-            title="${currentUser ? '' : 'Sign in to vote'}">
-            ${currentUser ? '🐝 This is the Bee's Knees!' : '🔒 Sign in to vote'}
-          </button>
-          <span class="waggle-count" id="waggle-count-${escHtml(place.place_id)}"></span>
-        </div>
-        <a class="maps-link" href="${safeMapsUrl(place)}" target="_blank" rel="noopener">🗺️ Open in Maps</a>
-        ${(selectedQuery.includes("hotel") || queryInput.value.toLowerCase().includes("hotel")) ? `<a class="booking-link" href="https://www.booking.com/searchresults.html?ss=${encodeURIComponent(place.name + " " + (place.vicinity || ""))}&aid=${BOOKING_CID}&lang=en-gb&sb=1&src=searchresults" target="_blank" rel="noopener">🏨 Book on Booking.com</a>` : ""}
-      </div>
-    `;
-    podium.appendChild(card);
-  });
-
-  resultsDiv.appendChild(podium);
-
-  // Honourable mentions
-  if (honourable.length > 0) {
-    const mentionsHeader = document.createElement("div");
-    mentionsHeader.className = "mentions-header";
-    mentionsHeader.innerHTML = `<span class="mentions-label">🐝 Honourable Mentions from the Hive</span>`;
-    resultsDiv.appendChild(mentionsHeader);
-
-    const mentionsEl = document.createElement("div");
-    mentionsEl.className = "mentions";
-
-    honourable.forEach((place, i) => {
-      const card = document.createElement("div");
-      card.className = "mention-card";
-
-      const reviews    = place.review_count || place.user_ratings_total || 0;
-      const reviewsStr = reviews ? `<span>${reviews.toLocaleString()} reviews</span>` : "";
-      const distStr    = place.distance_km != null ? `<span>📍 ${place.distance_km} km</span>` : "";
-
-      card.innerHTML = `
-        <div class="mention-icon">${MENTION_ICONS[i]}</div>
-        <div class="mention-info">
-          <div class="mention-name" title="${escHtml(place.name)}">${escHtml(place.name)}</div>
-          <div class="mention-meta">
-            <span>⭐ ${place.rating}</span>
-            ${reviewsStr}
-            ${distStr}
-          </div>
-          ${place.description ? `<div class="mention-description">📌 ${escHtml(place.description)}</div>` : ""}
-          <div style="font-size:0.68rem;color:var(--soft);font-style:italic;margin-top:0.2rem;">${MENTION_LABELS[i]}</div>
-          <div class="waggle-row" style="margin-top:0.4rem;">
-            <button class="waggle-btn" id="waggle-${escHtml(place.place_id)}"
-              onclick="castWaggle('${escHtml(place.place_id)}', '${escHtml(place.name)}', this)">
-              🐝 This is the Bee's Knees!
-            </button>
-            <span class="waggle-count" id="waggle-count-${escHtml(place.place_id)}"></span>
-          </div>
-        </div>
-        <a class="mention-link" href="${safeMapsUrl(place)}" target="_blank" rel="noopener">🗺️ Maps</a>
-      `;
-      mentionsEl.appendChild(card);
     });
 
-    resultsDiv.appendChild(mentionsEl);
+    // Sign out
+    const logoutBtn = document.getElementById("auth-logout");
+    if (logoutBtn) logoutBtn.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      document.getElementById("auth-overlay")?.classList.remove("open");
+      updateAuthUI(null);
+    });
+
+    // Auth state
+    supabase.auth.onAuthStateChange((_event, session) => {
+      updateAuthUI(session?.user || null);
+    });
+
+    // Check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) updateAuthUI(session.user);
+    });
+
+  } catch(e) {
+    console.warn("Supabase init error:", e.message);
   }
 }
-
-function renderHours(place) {
-  if (place.business_status === "PERMANENTLY_CLOSED") {
-    return `<div class="hours-tag hours-closed">🚫 Permanently closed</div>`;
-  }
-  if (place.business_status === "TEMPORARILY_CLOSED") {
-    return `<div class="hours-tag hours-closed">⚠️ Temporarily closed</div>`;
-  }
-  if (place.is_open_now === true) {
-    const closing = place.closing_time ? ` · Closes ${place.closing_time}` : "";
-    return `<div class="hours-tag hours-open">✅ Open now${closing}</div>`;
-  }
-  if (place.is_open_now === false) {
-    return `<div class="hours-tag hours-closed">🔴 Closed now</div>`;
-  }
-  return ""; // no hours data — show nothing
-}
-
-function capitalise(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
-
-function escHtml(str) {
-  if (!str) return "";
-  const d = document.createElement("div");
-  d.textContent = str;
-  return d.innerHTML;
-}
-
-function safeMapsUrl(place) {
-  // If we have a valid maps_url that isn't the old broken format, use it
-  if (place.maps_url && !place.maps_url.includes("maps/place/?q=place_id")) {
-    return place.maps_url;
-  }
-  // Build a reliable fallback using name + address
-  const q = encodeURIComponent([(place.name || ""), (place.vicinity || "")].filter(Boolean).join(" "));
-  return `https://www.google.com/maps/search/?api=1&query=${q}`;
-}
-
-// ── Auto-run search from URL params ──────────────────────────
-// Handles shared links like ?q=pizza&lat=54.59&lng=-5.93&radius=3000
-(function loadFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const q      = params.get("q");
-  const lat    = parseFloat(params.get("lat"));
-  const lng    = parseFloat(params.get("lng"));
-  const radius = parseInt(params.get("radius"));
-
-  if (!q || !lat || !lng) return;
-
-  // Restore state
-  userLat = lat;
-  userLng = lng;
-  if (radius) selectedRadius = radius;
-
-  // Update UI
-  locationInput.value = `📡 Shared location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-  queryInput.value    = q;
-
-  // Highlight matching pill if any
-  document.querySelectorAll(".pill").forEach(p => {
-    if (p.dataset.query === q) {
-      p.classList.add("active");
-      queryInput.value = "";
-      selectedQuery = q;
-    }
-  });
-
-  // Highlight matching radius button
-  document.querySelectorAll(".dist-btn").forEach(b => {
-    b.classList.remove("active");
-    if (parseInt(b.dataset.radius) === selectedRadius) b.classList.add("active");
-  });
-
-  // Auto-run the search
-  setTimeout(() => searchBtn.click(), 300);
-})();
 
 // ── Waggle Vote ───────────────────────────────────────────────
 const voted = JSON.parse(localStorage.getItem("bk_voted") || "{}");
@@ -1955,6 +1529,14 @@ function showError(msg) {
   statusDiv.innerHTML = `<div class="error-msg">⚠️ ${escHtml(msg)}</div>`;
   searchBtn.disabled = false;
 }
+// ── Load Supabase and init auth ──────────────────────────────
+(function() {
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  s.onload = initSupabase;
+  s.onerror = () => console.warn("Supabase CDN failed to load");
+  document.head.appendChild(s);
+})();
 </script>
 </body>
 </html>
