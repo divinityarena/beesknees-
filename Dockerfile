@@ -8,6 +8,7 @@ RUN npm install --production
 COPY server.js ./
 COPY index.html ./
 COPY about.html ./
+COPY profile.html ./
 
 EXPOSE 3000
 
