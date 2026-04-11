@@ -1137,9 +1137,6 @@
     <div class="honey-divider">✦ &nbsp; ✦ &nbsp; ✦</div>
   </header>
 
-  <!-- One-tap Near Me Now -->
-  <button class="near-me-btn" id="near-me-btn">🐝 Find the Best Near Me Right Now</button>
-
   <div class="card">
 
     <div class="input-group">
@@ -1262,14 +1259,6 @@
 
 </div>
 
-  <!-- Partner -->
-  <div class="partner-bar">
-    <div class="partner-label">🤝 Proud Partners Of</div>
-    <a href="https://www.pintstops.com" target="_blank" rel="noopener" class="partner-link">
-      <span class="partner-pint">🍺</span>
-      <span class="partner-name">Pint<span>Stops</span>.com</span>
-    </a>
-  </div>
 
 </div>
 
@@ -1913,13 +1902,24 @@ document.getElementById("auth-overlay").addEventListener("click", e => {
 document.getElementById("auth-submit").addEventListener("click", async () => {
   const authEmail = document.getElementById("auth-email")?.value.trim();
   if (!authEmail) return;
-  if (!supabase) {
-    alert("Sign in is loading, please try again in a moment.");
-    return;
-  }
   const submitBtn       = document.getElementById("auth-submit");
   submitBtn.disabled    = true;
   submitBtn.textContent = "Sending… 🐝";
+
+  // Wait up to 5 seconds for Supabase to load if not ready yet
+  let waited = 0;
+  while (!supabase && waited < 50) {
+    await new Promise(r => setTimeout(r, 100));
+    waited++;
+  }
+
+  if (!supabase) {
+    submitBtn.disabled    = false;
+    submitBtn.textContent = "🍯 Send Magic Link";
+    showError("Couldn't connect to sign in service. Please refresh and try again.");
+    return;
+  }
+
   const { error } = await supabase.auth.signInWithOtp({
     email: authEmail,
     options: { emailRedirectTo: window.location.origin }
@@ -1927,7 +1927,7 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
   if (error) {
     submitBtn.disabled    = false;
     submitBtn.textContent = "🍯 Send Magic Link";
-    alert("Error: " + error.message);
+    showError("Couldn't send magic link: " + error.message);
   } else {
     const af = document.getElementById("auth-form-view");
     const as = document.getElementById("auth-success-view");
