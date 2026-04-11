@@ -1305,56 +1305,6 @@ const MEDALS        = ["🥇", "🥈", "🥉"];
 const MENTION_ICONS = ["🌸", "🌼"];
 const MENTION_LABELS = ["Worthy of the Waggle Dance", "Almost Royal Jelly"];
 
-// ── Near Me Now ──────────────────────────────────────────────
-const NEAR_ME_CATEGORIES = [
-  "restaurant dining", "pub bar", "cafe coffee shop",
-  "takeaway food", "tourist attraction sightseeing",
-  "dessert ice cream bakery sweet",
-];
-
-document.getElementById("near-me-btn").addEventListener("click", () => {
-  const btn = document.getElementById("near-me-btn");
-  if (!navigator.geolocation) return showError("Geolocation not supported.");
-
-  btn.textContent = "📡 Finding you…";
-  btn.disabled    = true;
-
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
-      document.getElementById("location-input").value = `📡 GPS (${userLat.toFixed(4)}, ${userLng.toFixed(4)})`;
-
-      // Pick a random category for fun
-      const category = NEAR_ME_CATEGORIES[Math.floor(Math.random() * NEAR_ME_CATEGORIES.length)];
-      const label    = category.split(" ")[0];
-      selectedQuery  = category;
-      selectedRadius = 3000;
-
-      // Update UI to show what we're searching
-      document.getElementById("query-input").value = "";
-      document.getElementById("query-input").placeholder = `🐝 Best ${label} near you…`;
-      document.querySelectorAll(".pill").forEach(p => {
-        p.classList.toggle("active", p.dataset.query === category);
-      });
-
-      btn.textContent = `🐝 Finding the best ${label} near you…`;
-
-      // Trigger search
-      document.getElementById("search-btn").click();
-      btn.disabled    = false;
-      btn.textContent = "🐝 Find the Best Near Me Right Now";
-    },
-    (err) => {
-      btn.disabled    = false;
-      btn.textContent = "🐝 Find the Best Near Me Right Now";
-      if (err.code === 1) showError("Location access blocked. Click the 🔒 padlock → Site Settings → Location → Allow.");
-      else showError("Couldn't get your location. Try typing it instead.");
-    },
-    { timeout: 8000, enableHighAccuracy: false }
-  );
-});
-
 // ── GPS ───────────────────────────────────────────────────────
 document.getElementById("gps-btn").addEventListener("click", () => {
   if (!navigator.geolocation) return showError("Geolocation not supported.");
@@ -1888,14 +1838,16 @@ function initSupabase() {
 }
 
 // ── Attach auth modal triggers immediately (don't wait for Supabase) ──
-document.getElementById("auth-btn").addEventListener("click", showAuthModal);
-document.getElementById("auth-close").addEventListener("click", () => {
-  document.getElementById("auth-overlay").classList.remove("open");
+const _authBtnEl    = document.getElementById("auth-btn");
+const _authCloseEl  = document.getElementById("auth-close");
+const _authOverlay  = document.getElementById("auth-overlay");
+
+if (_authBtnEl)   _authBtnEl.addEventListener("click", showAuthModal);
+if (_authCloseEl) _authCloseEl.addEventListener("click", () => {
+  if (_authOverlay) _authOverlay.classList.remove("open");
 });
-document.getElementById("auth-overlay").addEventListener("click", e => {
-  if (e.target === document.getElementById("auth-overlay")) {
-    document.getElementById("auth-overlay").classList.remove("open");
-  }
+if (_authOverlay) _authOverlay.addEventListener("click", e => {
+  if (e.target === _authOverlay) _authOverlay.classList.remove("open");
 });
 
 // Auth submit — works once Supabase is ready
