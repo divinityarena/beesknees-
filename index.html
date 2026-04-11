@@ -1300,8 +1300,8 @@ function initSupabase() {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
     // Auth button
-    const authBtn = document.getElementById("auth-btn");
-    if (authBtn) authBtn.addEventListener("click", showAuthModal);
+    const _authBtn = document.getElementById("auth-btn");
+    if (_authBtn) _authBtn.addEventListener("click", showAuthModal);
 
     // Close modal
     const closeBtn = document.getElementById("auth-close");
@@ -1310,9 +1310,9 @@ function initSupabase() {
     });
 
     // Click outside to close
-    const overlay = document.getElementById("auth-overlay");
-    if (overlay) overlay.addEventListener("click", e => {
-      if (e.target === overlay) overlay.classList.remove("open");
+    const _overlay = document.getElementById("auth-overlay");
+    if (_overlay) _overlay.addEventListener("click", e => {
+      if (e.target === _overlay) _overlay.classList.remove("open");
     });
 
     // Send magic link
@@ -1331,10 +1331,10 @@ function initSupabase() {
         submitBtn.textContent = "🍯 Send Magic Link";
         alert("Error: " + error.message);
       } else {
-        const fv = document.getElementById("auth-form-view");
-        const sv = document.getElementById("auth-success-view");
-        if (fv) fv.style.display = "none";
-        if (sv) sv.style.display = "block";
+        const _fv = document.getElementById("auth-form-view");
+        const _sv = document.getElementById("auth-success-view");
+        if (_fv) _fv.style.display = "none";
+        if (_sv) _sv.style.display = "block";
       }
     });
 
@@ -1447,12 +1447,12 @@ document.getElementById("share-whatsapp").href =
 
 document.getElementById("share-copy").addEventListener("click", () => {
   navigator.clipboard.writeText(APP_URL).then(() => {
-    const btn = document.getElementById("share-copy");
-    btn.textContent = "✅ Copied!";
-    btn.classList.add("copied");
+    const shareBtn = document.getElementById("share-copy");
+    shareBtn.textContent = "✅ Copied!";
+    shareBtn.classList.add("copied");
     setTimeout(() => {
-      btn.textContent = "🔗 Copy Link";
-      btn.classList.remove("copied");
+      shareBtn.textContent = "🔗 Copy Link";
+      shareBtn.classList.remove("copied");
     }, 2000);
   });
 });
@@ -1481,8 +1481,8 @@ document.getElementById("feedback-toggle").addEventListener("click", () => {
 });
 
 document.getElementById("feedback-submit").addEventListener("click", async () => {
-  const name    = document.getElementById("feedback-name").value.trim();
-  const email   = document.getElementById("feedback-email").value.trim();
+  const fbName  = document.getElementById("feedback-name").value.trim();
+  const fbEmail = document.getElementById("feedback-email").value.trim();
   const message = document.getElementById("feedback-message").value.trim();
 
   if (!message) {
@@ -1490,9 +1490,9 @@ document.getElementById("feedback-submit").addEventListener("click", async () =>
     return;
   }
 
-  const btn = document.getElementById("feedback-submit");
-  btn.textContent = "Sending… 🐝";
-  btn.disabled = true;
+  const fbBtn = document.getElementById("feedback-submit");
+  fbBtn.textContent = "Sending… 🐝";
+  fbBtn.disabled = true;
 
   try {
     if (FORMSPREE_ID === "YOUR_FORM_ID") {
@@ -1502,7 +1502,7 @@ document.getElementById("feedback-submit").addEventListener("click", async () =>
       await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ name, email, message }),
+        body:    JSON.stringify({ name: fbName, email: fbEmail, message }),
       });
     }
 
@@ -1531,11 +1531,23 @@ function showError(msg) {
 }
 // ── Load Supabase and init auth ──────────────────────────────
 (function() {
-  const s = document.createElement("script");
-  s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-  s.onload = initSupabase;
-  s.onerror = () => console.warn("Supabase CDN failed to load");
-  document.head.appendChild(s);
+  const CDNS = [
+    "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js",
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js",
+  ];
+  let tried = 0;
+  function tryNext() {
+    if (tried >= CDNS.length) {
+      console.warn("Supabase unavailable — auth disabled, app works normally");
+      return;
+    }
+    const s    = document.createElement("script");
+    s.src      = CDNS[tried++];
+    s.onload   = initSupabase;
+    s.onerror  = tryNext;
+    document.head.appendChild(s);
+  }
+  tryNext();
 })();
 </script>
 </body>
