@@ -1247,13 +1247,492 @@
 
 <script>
 // ── Config ────────────────────────────────────────────────────
-const API_BASE       = window.location.origin;
+const API_BASE   = window.location.origin;
+const BOOKING_CID = "7909405";
+
+// ── Voter ID ──────────────────────────────────────────────────
+const VOTER_ID = (() => {
+  try {
+    let id = localStorage.getItem("bk_voter_id");
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem("bk_voter_id", id); }
+    return id;
+  } catch(e) { return "anon-" + Math.random().toString(36).slice(2); }
+})();
+
+// ── Voted places (persisted) ──────────────────────────────────
+const voted = (() => {
+  try { return JSON.parse(localStorage.getItem("bk_voted") || "{}"); }
+  catch(e) { return {}; }
+})();
+
+// ── State ─────────────────────────────────────────────────────
+let userLat        = null;
+let userLng        = null;
+let selectedRadius = 3000;
+let selectedQuery  = "";
+let currentUser    = null;
+let supabase       = null;
+
+const MEDALS        = ["🥇", "🥈", "🥉"];
+const MENTION_ICONS = ["🌸", "🌼"];
+const MENTION_LABELS = ["Worthy of the Waggle Dance", "Almost Royal Jelly"];
+
+// ── GPS ───────────────────────────────────────────────────────
+document.getElementById("gps-btn").addEventListener("click", () => {
+  if (!navigator.geolocation) return showError("Geolocation not supported.");
+  document.getElementById("gps-btn").textContent = "⏳";
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      document.getElementById("location-input").value = `📡 GPS (${userLat.toFixed(4)}, ${userLng.toFixed(4)})`;
+      document.getElementById("gps-btn").textContent = "✅";
+    },
+    (err) => {
+      document.getElementById("gps-btn").textContent = "📡";
+      if (err.code === 1) showError("Location access blocked. Click the 🔒 padlock → Site Settings → Location → Allow, then try again.");
+      else if (err.code === 2) showError("Couldn't detect your location. Try typing your postcode or town instead.");
+      else showError("Location request timed out. Try typing your postcode or town instead.");
+    },
+    { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
+  );
+});
+
+// ── Category pills ────────────────────────────────────────────
+document.querySelectorAll("#pill-grid, #pill-grid-convenience").forEach(grid => {
+  grid.addEventListener("click", (e) => {
+    const pill = e.target.closest(".pill");
+    if (!pill) return;
+    document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+    pill.classList.add("active");
+    selectedQuery = pill.dataset.query;
+    document.getElementById("query-input").value = "";
+    document.getElementById("query-input").placeholder = pill.querySelector(".icon").textContent + " " + pill.textContent.trim().replace(/^\S+\s*/,"");
+    const isConvenience = pill.classList.contains("convenience");
+    document.getElementById("search-btn").innerHTML = isConvenience ? "📍 Find the Nearest" : "🐝 Scout the Hive";
+  });
+});
+
+document.getElementById("query-input").addEventListener("input", () => {
+  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  selectedQuery = "";
+  document.getElementById("search-btn").innerHTML = "🐝 Scout the Hive";
+});
+
+// ── Distance buttons ──────────────────────────────────────────
+document.getElementById("dist-row").addEventListener("click", (e) => {
+  const btn = e.target.closest(".dist-btn");
+  if (!btn) return;
+  document.querySelectorAll(".dist-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  selectedRadius = parseInt(btn.dataset.radius);
+});
+
+// ── Geocode via server proxy ──────────────────────────────────
+async function geocodeLocation(text) {
+  const res  = await fetch(`${API_BASE}/geocode?address=${encodeURIComponent(text)}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Couldn't find "${text}". Try your full postcode or town name.`);
+  console.log(`📍 ${text} → ${data.formatted} (${data.lat}, ${data.lng})`);
+  return { lat: data.lat, lng: data.lng };
+}
+
+// ── Hive Score (frontend mirror) ──────────────────────────────
+const HIVE_SCORE_MAX = Math.pow(5.0, 3.0) * Math.log10(510) * (1 - (1 / Math.log10(510))) * 1.05;
+function confidence(reviews) { return 1 - (1 / Math.log10(reviews + 10)); }
+function calcHiveScore(rating, reviews, dual) {
+  const base = Math.pow(rating, 3.0) * Math.log10(Math.min(reviews, 500) + 10) * confidence(reviews);
+  return Math.min(Math.round((base * (dual ? 1.05 : 1.0) / HIVE_SCORE_MAX) * 100 * 10) / 10, 100);
+}
+function scoreAndSort(rawPlaces) {
+  return [...rawPlaces]
+    .filter(p => p.rating != null && p.rating > 0)
+    .map(p => ({
+      ...p,
+      hive_score: p.hive_score ?? calcHiveScore(p.rating, p.review_count || 0, p.sources?.length > 1)
+    }))
+    .sort((a, b) => b.hive_score - a.hive_score);
+}
+
+// ── Search ────────────────────────────────────────────────────
+document.getElementById("search-btn").addEventListener("click", async () => {
+  const query       = document.getElementById("query-input").value.trim() || selectedQuery;
+  const locationText = document.getElementById("location-input").value.trim();
+  const searchBtn   = document.getElementById("search-btn");
+  const statusDiv   = document.getElementById("status");
+  const resultsDiv  = document.getElementById("results");
+
+  if (!query) return showError("Please enter what you're looking for, or tap a category.");
+
+  try {
+    if (!userLat || !userLng || !locationText.startsWith("📡")) {
+      if (!locationText) return showError("Please enter a location or use GPS.");
+      showBuzz("Scouting your location… 🗺️");
+      const coords = await geocodeLocation(locationText);
+      userLat = coords.lat;
+      userLng = coords.lng;
+    }
+  } catch (err) {
+    return showError(err.message);
+  }
+
+  showBuzz("Buzzing around the hive for the best spots… 🐝");
+  searchBtn.disabled   = true;
+  resultsDiv.innerHTML = "";
+
+  // Bee animation
+  const bee    = document.getElementById("header-bee");
+  const flower = document.getElementById("header-flower");
+  if (bee && flower) {
+    flower.classList.remove("bloom");
+    bee.classList.remove("scouting","landing","sitting","returning");
+    void flower.offsetWidth;
+    flower.classList.add("bloom");
+    setTimeout(() => { bee.classList.add("scouting"); }, 0);
+    setTimeout(() => { bee.classList.remove("scouting"); void bee.offsetWidth; bee.classList.add("landing"); }, 700);
+    setTimeout(() => { bee.classList.remove("landing"); void bee.offsetWidth; bee.classList.add("sitting"); }, 1900);
+  }
+
+  try {
+    const url  = `${API_BASE}/google-places?lat=${userLat}&lng=${userLng}&query=${encodeURIComponent(query)}&radius=${selectedRadius}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Server error");
+    if (!data.results || !data.results.length) {
+      showError("No spots found nearby. Try a larger radius or different search. 🍯");
+      return;
+    }
+
+    renderResults(data.results, query);
+    statusDiv.style.display = "none";
+
+    // Load waggle votes
+    const placeIds = data.results.map(p => p.place_id).filter(Boolean);
+    loadWaggleVotes(placeIds);
+
+    // Bee takeoff
+    if (bee && flower) {
+      setTimeout(() => {
+        bee.classList.remove("sitting");
+        void bee.offsetWidth;
+        bee.classList.add("returning");
+        flower.classList.remove("bloom");
+        flower.classList.add("unbloom");
+        setTimeout(() => { bee.classList.remove("returning"); flower.classList.remove("unbloom"); }, 900);
+      }, 500);
+    }
+
+    // Load shared URL into address bar
+    const params = new URLSearchParams({ q: query, lat: userLat, lng: userLng, radius: selectedRadius });
+    window.history.replaceState({}, "", `?${params.toString()}`);
+
+  } catch (err) {
+    showError("Couldn't reach the hive server. Make sure it's running. 🐝");
+    console.error(err);
+  } finally {
+    searchBtn.disabled = false;
+  }
+});
+
+// ── Render results ────────────────────────────────────────────
+function renderResults(rawPlaces, query) {
+  const resultsDiv = document.getElementById("results");
+  resultsDiv.innerHTML = "";
+
+  const sorted     = scoreAndSort(rawPlaces);
+  const top3       = sorted.slice(0, 3);
+  const honourable = sorted.slice(3, 5);
+
+  const heading = document.createElement("div");
+  heading.className = "results-heading";
+  heading.innerHTML = `
+    <h2>🏆 The Best ${capitalise(query)} Near You</h2>
+    <p>🍯 Top picks within ${(selectedRadius / 1000).toFixed(0)} km · Ranked by the hive</p>
+  `;
+  resultsDiv.appendChild(heading);
+
+  // Share button
+  const shareRow = document.createElement("div");
+  shareRow.style.cssText = "text-align:center; margin-bottom:1rem;";
+  const shareSearchBtn   = document.createElement("button");
+  shareSearchBtn.className = "share-search-btn";
+  shareSearchBtn.id        = "share-search-btn";
+  shareSearchBtn.innerHTML = "🔗 Share these results";
+  shareSearchBtn.addEventListener("click", () => {
+    const params   = new URLSearchParams({ q: document.getElementById("query-input").value.trim() || selectedQuery, lat: userLat, lng: userLng, radius: selectedRadius });
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      shareSearchBtn.textContent = "✅ Link copied!";
+      shareSearchBtn.classList.add("copied");
+      setTimeout(() => { shareSearchBtn.innerHTML = "🔗 Share these results"; shareSearchBtn.classList.remove("copied"); }, 2500);
+    });
+  });
+  shareRow.appendChild(shareSearchBtn);
+  resultsDiv.appendChild(shareRow);
+
+  // Podium
+  const podium = document.createElement("div");
+  podium.className = "podium";
+  top3.forEach((place, i) => {
+    const card = document.createElement("div");
+    card.className = `result-card rank-${i + 1}`;
+    const reviews   = place.review_count || place.user_ratings_total || 0;
+    const reviewStr = reviews ? `<span>${reviews.toLocaleString()} reviews</span>` : "";
+    const distStr   = place.distance_km != null ? `<span>📍 ${place.distance_km} km away</span>` : "";
+    const dualBadge = place.sources?.length > 1 ? `<div class="dual-badge">🐝 Verified by both sources</div>` : "";
+    const hoursHtml = renderHours(place);
+    const descHtml  = place.description ? `<div class="result-description">📌 ${escHtml(place.description)}</div>` : "";
+    const bookingBtn = (selectedQuery.includes("hotel") || document.getElementById("query-input").value.toLowerCase().includes("hotel"))
+      ? `<a class="booking-link" href="https://www.booking.com/searchresults.html?ss=${encodeURIComponent(place.name + " " + (place.vicinity||""))}&aid=${BOOKING_CID}&lang=en-gb&sb=1&src=searchresults" target="_blank" rel="noopener">🏨 Book on Booking.com</a>`
+      : "";
+    card.innerHTML = `
+      <div class="medal">${MEDALS[i]}</div>
+      <div class="result-info">
+        <div class="result-name" title="${escHtml(place.name)}">${escHtml(place.name)}</div>
+        <div class="hive-score-badge${i === 0 ? " hive-score-gold" : ""}">
+          ${i === 0 ? "👑 Golden Honey Pick · " : "🍯 "}Hive Score: ${place.hive_score}/100
+        </div>
+        <div class="result-meta">
+          <span class="stars">⭐ ${place.rating}</span>
+          ${reviewStr}
+          ${distStr}
+        </div>
+        ${hoursHtml}
+        ${dualBadge}
+        ${descHtml}
+        <div class="waggle-row">
+          <button class="waggle-btn" id="waggle-${escHtml(place.place_id)}"
+            onclick="castWaggle('${escHtml(place.place_id)}','${escHtml(place.name)}',this)">
+            ${currentUser ? "🐝 This is the Bee's Knees!" : "🔒 Sign in to vote"}
+          </button>
+          <span class="waggle-count" id="waggle-count-${escHtml(place.place_id)}"></span>
+        </div>
+        <a class="maps-link" href="${safeMapsUrl(place)}" target="_blank" rel="noopener">🗺️ Open in Maps</a>
+        ${bookingBtn}
+      </div>
+    `;
+    podium.appendChild(card);
+  });
+  resultsDiv.appendChild(podium);
+
+  // Honourable mentions
+  if (honourable.length > 0) {
+    const mentionsHeader = document.createElement("div");
+    mentionsHeader.className = "mentions-header";
+    mentionsHeader.innerHTML = `<span class="mentions-label">🐝 Honourable Mentions from the Hive</span>`;
+    resultsDiv.appendChild(mentionsHeader);
+
+    const mentionsEl = document.createElement("div");
+    mentionsEl.className = "mentions";
+    honourable.forEach((place, i) => {
+      const card      = document.createElement("div");
+      card.className  = "mention-card";
+      const reviews   = place.review_count || place.user_ratings_total || 0;
+      const reviewStr = reviews ? `<span>${reviews.toLocaleString()} reviews</span>` : "";
+      const distStr   = place.distance_km != null ? `<span>📍 ${place.distance_km} km</span>` : "";
+      card.innerHTML  = `
+        <div class="mention-icon">${MENTION_ICONS[i]}</div>
+        <div class="mention-info">
+          <div class="mention-name" title="${escHtml(place.name)}">${escHtml(place.name)}</div>
+          <div class="mention-meta">
+            <span>⭐ ${place.rating}</span>
+            ${reviewStr}
+            ${distStr}
+          </div>
+          ${place.description ? `<div class="mention-description">📌 ${escHtml(place.description)}</div>` : ""}
+          <div style="font-size:0.68rem;color:var(--soft);font-style:italic;margin-top:0.2rem;">${MENTION_LABELS[i]}</div>
+          <div class="waggle-row" style="margin-top:0.4rem;">
+            <button class="waggle-btn" id="waggle-${escHtml(place.place_id)}"
+              onclick="castWaggle('${escHtml(place.place_id)}','${escHtml(place.name)}',this)">
+              ${currentUser ? "🐝 This is the Bee's Knees!" : "🔒 Sign in to vote"}
+            </button>
+            <span class="waggle-count" id="waggle-count-${escHtml(place.place_id)}"></span>
+          </div>
+        </div>
+        <a class="mention-link" href="${safeMapsUrl(place)}" target="_blank" rel="noopener">🗺️ Maps</a>
+      `;
+      mentionsEl.appendChild(card);
+    });
+    resultsDiv.appendChild(mentionsEl);
+  }
+}
+
+// ── Hours ─────────────────────────────────────────────────────
+function renderHours(place) {
+  if (place.business_status === "PERMANENTLY_CLOSED") return `<div class="hours-tag hours-closed">🚫 Permanently closed</div>`;
+  if (place.business_status === "TEMPORARILY_CLOSED") return `<div class="hours-tag hours-closed">⚠️ Temporarily closed</div>`;
+  if (place.is_open_now === true) {
+    const closing = place.closing_time ? ` · Closes ${place.closing_time}` : "";
+    return `<div class="hours-tag hours-open">✅ Open now${closing}</div>`;
+  }
+  if (place.is_open_now === false) return `<div class="hours-tag hours-closed">🔴 Closed now</div>`;
+  return "";
+}
+
+// ── Waggle votes ──────────────────────────────────────────────
+async function loadWaggleVotes(placeIds) {
+  if (!placeIds.length) return;
+  try {
+    const res  = await fetch(`${API_BASE}/votes?place_ids=${placeIds.join(",")}`);
+    const data = await res.json();
+    placeIds.forEach(id => {
+      updateWaggleUI(id, data.votes?.[id] || 0, voted[id]);
+    });
+  } catch(e) { console.warn("Votes fetch failed", e); }
+}
+
+function updateWaggleUI(placeId, count, hasVoted) {
+  const btn     = document.getElementById(`waggle-${placeId}`);
+  const countEl = document.getElementById(`waggle-count-${placeId}`);
+  if (!btn || !countEl) return;
+  if (hasVoted) { btn.textContent = "🐝 You agreed!"; btn.classList.add("voted"); }
+  if (count > 0) { countEl.textContent = `${count} Bee${count === 1 ? "" : "s"} agree`; countEl.classList.add("has-votes"); }
+}
+
+async function castWaggle(placeId, placeName, btn) {
+  if (!currentUser) { showAuthModal(); return; }
+  if (voted[placeId]) return;
+  btn.textContent = "🐝 Buzzing…";
+  btn.disabled    = true;
+  try {
+    const vres  = await fetch(`${API_BASE}/vote`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ place_id: placeId, place_name: placeName, voter_id: currentUser.id }),
+    });
+    const vdata = await vres.json();
+    if (supabase) {
+      await supabase.from("user_votes").upsert({ user_id: currentUser.id, place_id: placeId, place_name: placeName }, { onConflict: "user_id,place_id" });
+    }
+    voted[placeId] = true;
+    try { localStorage.setItem("bk_voted", JSON.stringify(voted)); } catch(e) {}
+    updateWaggleUI(placeId, vdata.total, true);
+  } catch(e) {
+    btn.textContent = currentUser ? "🐝 This is the Bee's Knees!" : "🔒 Sign in to vote";
+    btn.disabled    = false;
+  }
+}
+
+// ── Auto-load from shared URL ─────────────────────────────────
+(function loadFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const q      = params.get("q");
+  const lat    = parseFloat(params.get("lat"));
+  const lng    = parseFloat(params.get("lng"));
+  const radius = parseInt(params.get("radius"));
+  if (!q || !lat || !lng) return;
+  userLat = lat; userLng = lng;
+  if (radius) selectedRadius = radius;
+  document.getElementById("location-input").value = `📡 Shared location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+  document.getElementById("query-input").value    = q;
+  document.querySelectorAll(".pill").forEach(p => {
+    if (p.dataset.query === q) { p.classList.add("active"); document.getElementById("query-input").value = ""; selectedQuery = q; }
+  });
+  document.querySelectorAll(".dist-btn").forEach(b => {
+    b.classList.toggle("active", parseInt(b.dataset.radius) === selectedRadius);
+  });
+  setTimeout(() => document.getElementById("search-btn").click(), 300);
+})();
+
+// ── Share buttons ─────────────────────────────────────────────
+const APP_URL  = "https://beesknees.best";
+const APP_TEXT = "Find the best spots near you instantly 🐝 The Bee's Knees";
+
+document.getElementById("share-facebook").href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_URL)}`;
+document.getElementById("share-twitter").href  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(APP_TEXT)}&url=${encodeURIComponent(APP_URL)}`;
+document.getElementById("share-whatsapp").href = `https://wa.me/?text=${encodeURIComponent(APP_TEXT + " " + APP_URL)}`;
+
+document.getElementById("share-copy").addEventListener("click", () => {
+  navigator.clipboard.writeText(APP_URL).then(() => {
+    const shareBtn = document.getElementById("share-copy");
+    shareBtn.textContent = "✅ Copied!";
+    shareBtn.classList.add("copied");
+    setTimeout(() => { shareBtn.textContent = "🔗 Copy Link"; shareBtn.classList.remove("copied"); }, 2000);
+  });
+});
+
+// ── Feedback form ─────────────────────────────────────────────
+const FORMSPREE_ID = "mbdznqed";
+
+document.getElementById("feedback-toggle").addEventListener("click", () => {
+  const form   = document.getElementById("feedback-form");
+  const toggle = document.getElementById("feedback-toggle");
+  const isOpen = form.style.display !== "none";
+  form.style.display    = isOpen ? "none" : "flex";
+  toggle.textContent    = isOpen ? "✍️ Share your thoughts" : "✖ Close";
+  toggle.style.fontStyle = isOpen ? "italic" : "normal";
+  if (!isOpen) document.getElementById("feedback-name").focus();
+});
+
+document.getElementById("feedback-submit").addEventListener("click", async () => {
+  const fbName    = document.getElementById("feedback-name").value.trim();
+  const fbEmail   = document.getElementById("feedback-email").value.trim();
+  const message   = document.getElementById("feedback-message").value.trim();
+  if (!message) { document.getElementById("feedback-message").focus(); return; }
+  const fbBtn     = document.getElementById("feedback-submit");
+  fbBtn.textContent = "Sending… 🐝";
+  fbBtn.disabled    = true;
+  try {
+    if (FORMSPREE_ID !== "YOUR_FORM_ID") {
+      await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ name: fbName, email: fbEmail, message }),
+      });
+    }
+    document.getElementById("feedback-form").style.display    = "none";
+    document.getElementById("feedback-success").style.display = "block";
+  } catch {
+    fbBtn.textContent = "🐝 Send Feedback";
+    fbBtn.disabled    = false;
+  }
+});
+
+// ── Easter egg — 5 rapid clicks on bee ───────────────────────
+let beeClickCount = 0, beeClickTimer = null;
+document.getElementById("header-bee").addEventListener("click", () => {
+  beeClickCount++;
+  clearTimeout(beeClickTimer);
+  if (beeClickCount >= 5) {
+    beeClickCount = 0;
+    const bee = document.getElementById("header-bee");
+    bee.style.transition = "transform 0.1s";
+    bee.style.transform  = "scale(2) rotate(20deg)";
+    setTimeout(() => { bee.style.transform = "scale(1) rotate(0deg)"; window.open("https://visitbelfast.com/", "_blank"); }, 400);
+    return;
+  }
+  beeClickTimer = setTimeout(() => { beeClickCount = 0; }, 1000);
+});
+
+// ── Helpers ───────────────────────────────────────────────────
+function safeMapsUrl(place) {
+  if (place.maps_url && !place.maps_url.includes("maps/place/?q=place_id")) return place.maps_url;
+  const q = encodeURIComponent([(place.name||""), (place.vicinity||"")].filter(Boolean).join(" "));
+  return `https://www.google.com/maps/search/?api=1&query=${q}`;
+}
+function capitalise(str)  { return str.charAt(0).toUpperCase() + str.slice(1); }
+function escHtml(str) {
+  if (!str) return "";
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+function showBuzz(msg) {
+  const statusDiv  = document.getElementById("status");
+  const resultsDiv = document.getElementById("results");
+  statusDiv.style.display  = "block";
+  statusDiv.innerHTML      = `<div class="buzz-msg"><span class="buzz-bee">🐝</span> ${msg}</div>`;
+  resultsDiv.innerHTML     = "";
+}
+function showError(msg) {
+  const statusDiv = document.getElementById("status");
+  statusDiv.style.display = "block";
+  statusDiv.innerHTML     = `<div class="error-msg">⚠️ ${escHtml(msg)}</div>`;
+  document.getElementById("search-btn").disabled = false;
+}
 
 // ── Supabase Auth ─────────────────────────────────────────────
-// Initialised safely after page load to prevent crashes blocking all other JS
-let supabase    = null;
-let currentUser = null;
-
 const SUPABASE_URL  = "https://hwpcowjejebhapgqhnpl.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cGNvd2plamViaGFwZ3FobnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzA4NjgsImV4cCI6MjA5MTMwNjg2OH0.3dqzEA_Qw8RbJOWUNMZIFErVFRqy49BFRAbP8Bk6klw";
 
@@ -1262,13 +1741,13 @@ function updateAuthUI(user) {
   const authBtn = document.getElementById("auth-btn");
   if (!authBtn) return;
   if (user) {
-    const name = user.user_metadata?.display_name || user.email.split("@")[0];
-    authBtn.textContent = "🐝 " + name;
+    const uname = user.user_metadata?.display_name || user.email.split("@")[0];
+    authBtn.textContent = "🐝 " + uname;
     authBtn.classList.add("logged-in");
     const un = document.getElementById("auth-username");
-    if (un) un.textContent = name;
+    if (un) un.textContent = uname;
     document.querySelectorAll(".waggle-btn").forEach(b => {
-      if (!b.classList.contains("voted")) b.disabled = false;
+      if (!b.classList.contains("voted")) { b.disabled = false; b.textContent = "🐝 This is the Bee's Knees!"; }
     });
   } else {
     authBtn.textContent = "🐝 Sign In";
@@ -1296,240 +1775,43 @@ function showAuthModal() {
 
 function initSupabase() {
   try {
-    if (!window.supabase) { console.warn("Supabase CDN not loaded"); return; }
+    if (!window.supabase) return;
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-    // Auth button
-    const _authBtn = document.getElementById("auth-btn");
-    if (_authBtn) _authBtn.addEventListener("click", showAuthModal);
-
-    // Close modal
+    const authBtn = document.getElementById("auth-btn");
+    if (authBtn) authBtn.addEventListener("click", showAuthModal);
     const closeBtn = document.getElementById("auth-close");
-    if (closeBtn) closeBtn.addEventListener("click", () => {
-      document.getElementById("auth-overlay")?.classList.remove("open");
-    });
-
-    // Click outside to close
-    const _overlay = document.getElementById("auth-overlay");
-    if (_overlay) _overlay.addEventListener("click", e => {
-      if (e.target === _overlay) _overlay.classList.remove("open");
-    });
-
-    // Send magic link
+    if (closeBtn) closeBtn.addEventListener("click", () => document.getElementById("auth-overlay")?.classList.remove("open"));
+    const overlay = document.getElementById("auth-overlay");
+    if (overlay) overlay.addEventListener("click", e => { if (e.target === overlay) overlay.classList.remove("open"); });
     const submitBtn = document.getElementById("auth-submit");
     if (submitBtn) submitBtn.addEventListener("click", async () => {
-      const email = document.getElementById("auth-email")?.value.trim();
-      if (!email) return;
+      const authEmail = document.getElementById("auth-email")?.value.trim();
+      if (!authEmail) return;
       submitBtn.disabled    = true;
       submitBtn.textContent = "Sending… 🐝";
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: window.location.origin }
-      });
+      const { error } = await supabase.auth.signInWithOtp({ email: authEmail, options: { emailRedirectTo: window.location.origin } });
       if (error) {
-        submitBtn.disabled    = false;
-        submitBtn.textContent = "🍯 Send Magic Link";
+        submitBtn.disabled = false; submitBtn.textContent = "🍯 Send Magic Link";
         alert("Error: " + error.message);
       } else {
-        const _fv = document.getElementById("auth-form-view");
-        const _sv = document.getElementById("auth-success-view");
-        if (_fv) _fv.style.display = "none";
-        if (_sv) _sv.style.display = "block";
+        const af = document.getElementById("auth-form-view");
+        const as = document.getElementById("auth-success-view");
+        if (af) af.style.display = "none";
+        if (as) as.style.display = "block";
       }
     });
-
-    // Sign out
     const logoutBtn = document.getElementById("auth-logout");
     if (logoutBtn) logoutBtn.addEventListener("click", async () => {
       await supabase.auth.signOut();
       document.getElementById("auth-overlay")?.classList.remove("open");
       updateAuthUI(null);
     });
-
-    // Auth state
-    supabase.auth.onAuthStateChange((_event, session) => {
-      updateAuthUI(session?.user || null);
-    });
-
-    // Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) updateAuthUI(session.user);
-    });
-
-  } catch(e) {
-    console.warn("Supabase init error:", e.message);
-  }
+    supabase.auth.onAuthStateChange((_e, session) => updateAuthUI(session?.user || null));
+    supabase.auth.getSession().then(({ data: { session } }) => { if (session) updateAuthUI(session.user); });
+  } catch(e) { console.warn("Supabase init error:", e.message); }
 }
 
-// ── Waggle Vote ───────────────────────────────────────────────
-const voted = JSON.parse(localStorage.getItem("bk_voted") || "{}");
-
-async function loadWaggleVotes(placeIds) {
-  if (!placeIds.length) return;
-  try {
-    const res  = await fetch(`${API_BASE}/votes?place_ids=${placeIds.join(",")}`);
-    const data = await res.json();
-    placeIds.forEach(id => {
-      const count = data.votes?.[id] || 0;
-      updateWaggleUI(id, count, voted[id]);
-    });
-  } catch (e) { console.warn("Votes fetch failed", e); }
-}
-
-function updateWaggleUI(placeId, count, hasVoted) {
-  const btn      = document.getElementById(`waggle-${placeId}`);
-  const countEl  = document.getElementById(`waggle-count-${placeId}`);
-  if (!btn || !countEl) return;
-
-  if (hasVoted) {
-    btn.textContent = "🐝 You agreed!";
-    btn.classList.add("voted");
-  }
-  if (count > 0) {
-    countEl.textContent = `${count} Bee${count === 1 ? "" : "s"} agree`;
-    countEl.classList.add("has-votes");
-  } else {
-    countEl.textContent = "";
-  }
-}
-
-async function castWaggle(placeId, placeName, btn) {
-  // Require login to vote
-  if (!currentUser) {
-    showAuthModal();
-    return;
-  }
-
-  if (voted[placeId]) return;
-  btn.textContent = "🐝 Buzzing…";
-  btn.disabled = true;
-
-  try {
-    const res  = await fetch(`${API_BASE}/vote`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({
-        place_id:  placeId,
-        place_name: placeName,
-        voter_id:  currentUser.id, // use real user ID instead of anonymous
-      }),
-    });
-    const data = await res.json();
-
-    // Also save to Supabase user_votes for profile page
-    await supabase.from("user_votes").upsert({
-      user_id:    currentUser.id,
-      place_id:   placeId,
-      place_name: placeName,
-    }, { onConflict: "user_id,place_id" });
-
-    voted[placeId] = true;
-    localStorage.setItem("bk_voted", JSON.stringify(voted));
-    updateWaggleUI(placeId, data.total, true);
-  } catch (e) {
-    btn.textContent = "🐝 This is the Bee's Knees!";
-    btn.disabled = false;
-  }
-}
-
-// ── Share buttons ─────────────────────────────────────────────
-const APP_URL  = "https://beeskneesscore.netlify.app";
-const APP_TEXT = "Find the best spots near you instantly 🐝 The Bee's Knees";
-
-document.getElementById("share-facebook").href =
-  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_URL)}`;
-
-document.getElementById("share-twitter").href =
-  `https://twitter.com/intent/tweet?text=${encodeURIComponent(APP_TEXT)}&url=${encodeURIComponent(APP_URL)}`;
-
-document.getElementById("share-whatsapp").href =
-  `https://wa.me/?text=${encodeURIComponent(APP_TEXT + " " + APP_URL)}`;
-
-document.getElementById("share-copy").addEventListener("click", () => {
-  navigator.clipboard.writeText(APP_URL).then(() => {
-    const shareBtn = document.getElementById("share-copy");
-    shareBtn.textContent = "✅ Copied!";
-    shareBtn.classList.add("copied");
-    setTimeout(() => {
-      shareBtn.textContent = "🔗 Copy Link";
-      shareBtn.classList.remove("copied");
-    }, 2000);
-  });
-});
-
-// ── Feedback form ─────────────────────────────────────────────
-// Uses Formspree — free, no backend needed, sends to your email
-// Sign up at formspree.io and replace YOUR_FORM_ID below
-const FORMSPREE_ID    = "mbdznqed";
-const BOOKING_CID     = "7909405";
-
-// ── Voter ID — random per browser, stored in localStorage ────
-const VOTER_ID = (() => {
-  let id = localStorage.getItem("bk_voter_id");
-  if (!id) { id = crypto.randomUUID(); localStorage.setItem("bk_voter_id", id); }
-  return id;
-})();
-
-document.getElementById("feedback-toggle").addEventListener("click", () => {
-  const form   = document.getElementById("feedback-form");
-  const toggle = document.getElementById("feedback-toggle");
-  const isOpen = form.style.display !== "none";
-  form.style.display   = isOpen ? "none" : "flex";
-  toggle.textContent   = isOpen ? "✍️ Share your thoughts" : "✖ Close";
-  toggle.style.fontStyle = isOpen ? "italic" : "normal";
-  if (!isOpen) document.getElementById("feedback-name").focus();
-});
-
-document.getElementById("feedback-submit").addEventListener("click", async () => {
-  const fbName  = document.getElementById("feedback-name").value.trim();
-  const fbEmail = document.getElementById("feedback-email").value.trim();
-  const message = document.getElementById("feedback-message").value.trim();
-
-  if (!message) {
-    document.getElementById("feedback-message").focus();
-    return;
-  }
-
-  const fbBtn = document.getElementById("feedback-submit");
-  fbBtn.textContent = "Sending… 🐝";
-  fbBtn.disabled = true;
-
-  try {
-    if (FORMSPREE_ID === "YOUR_FORM_ID") {
-      // Dev mode — just simulate success
-      await new Promise(r => setTimeout(r, 800));
-    } else {
-      await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ name: fbName, email: fbEmail, message }),
-      });
-    }
-
-    document.getElementById("feedback-form").style.display    = "none";
-    document.getElementById("feedback-success").style.display = "block";
-  } catch {
-    btn.textContent = "🐝 Send Feedback";
-    btn.disabled    = false;
-    alert("Couldn't send feedback right now. Try again later.");
-  }
-});
-
-function showBuzz(msg) {
-  statusDiv.style.display = "block";
-  statusDiv.innerHTML = `
-    <div class="buzz-msg">
-      <span class="buzz-bee">🐝</span> ${msg}
-    </div>`;
-  resultsDiv.innerHTML = "";
-}
-
-function showError(msg) {
-  statusDiv.style.display = "block";
-  statusDiv.innerHTML = `<div class="error-msg">⚠️ ${escHtml(msg)}</div>`;
-  searchBtn.disabled = false;
-}
-// ── Load Supabase and init auth ──────────────────────────────
+// Load Supabase dynamically — auth is bonus feature, not critical
 (function() {
   const CDNS = [
     "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js",
@@ -1537,18 +1819,16 @@ function showError(msg) {
   ];
   let tried = 0;
   function tryNext() {
-    if (tried >= CDNS.length) {
-      console.warn("Supabase unavailable — auth disabled, app works normally");
-      return;
-    }
-    const s    = document.createElement("script");
-    s.src      = CDNS[tried++];
-    s.onload   = initSupabase;
-    s.onerror  = tryNext;
+    if (tried >= CDNS.length) { console.warn("Supabase unavailable — auth disabled"); return; }
+    const s   = document.createElement("script");
+    s.src     = CDNS[tried++];
+    s.onload  = initSupabase;
+    s.onerror = tryNext;
     document.head.appendChild(s);
   }
   tryNext();
 })();
+
 </script>
 </body>
 </html>
