@@ -1302,7 +1302,7 @@ let userLng        = null;
 let selectedRadius = 3000;
 let selectedQuery  = "";
 let currentUser    = null;
-let supabase       = null;
+let sbClient       = null;
 
 const MEDALS        = ["🥇", "🥈", "🥉"];
 const MENTION_ICONS = ["🌸", "🌼"];
@@ -1651,8 +1651,8 @@ async function castWaggle(placeId, placeName, btn) {
     });
     const vdata = await vres.json();
     // Also save to Supabase if logged in
-    if (supabase && currentUser) {
-      await supabase.from("user_votes").upsert(
+    if (sbClient && currentUser) {
+      await sbClient.from("user_votes").upsert(
         { user_id: currentUser.id, place_id: placeId, place_name: placeName },
         { onConflict: "user_id,place_id" }
       );
@@ -1827,16 +1827,18 @@ function showAuthModal() {
 
 function initSupabase() {
   try {
-    if (!window.supabase) return;
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    if (!window.supabase) { console.warn("window.supabase not available"); return; }
+    console.log("Supabase CDN loaded, createClient:", typeof window.supabase.createClient);
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    console.log("sbClient created:", !!sbClient);
     const logoutBtn = document.getElementById("auth-logout");
     if (logoutBtn) logoutBtn.addEventListener("click", async () => {
-      await supabase.auth.signOut();
+      await sbClient.auth.signOut();
       document.getElementById("auth-overlay")?.classList.remove("open");
       updateAuthUI(null);
     });
-    supabase.auth.onAuthStateChange((_e, session) => updateAuthUI(session?.user || null));
-    supabase.auth.getSession().then(({ data: { session } }) => { if (session) updateAuthUI(session.user); });
+    sbClient.auth.onAuthStateChange((_e, session) => updateAuthUI(session?.user || null));
+    sbClient.auth.getSession().then(({ data: { session } }) => { if (session) updateAuthUI(session.user); });
   } catch(e) { console.warn("Supabase init error:", e.message); }
 }
 
@@ -1863,17 +1865,17 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
 
   // Wait up to 8 seconds for Supabase to be ready
   let waited = 0;
-  while (!supabase && waited < 80) {
+  while (!sbClient && waited < 80) {
     await new Promise(r => setTimeout(r, 100));
     waited++;
     if (waited === 20) submitBtn.textContent = "Connecting… 🐝";
     // Try to init again if window.supabase appeared
-    if (window.supabase && !supabase) initSupabase();
+    if (window.supabase && !sbClient) initSupabase();
   }
 
-  console.log("Supabase ready:", !!supabase, "waited:", waited * 100 + "ms");
+  console.log("Supabase ready:", !!sbClient, "waited:", waited * 100 + "ms");
 
-  if (!supabase) {
+  if (!sbClient) {
     submitBtn.disabled    = false;
     submitBtn.textContent = "🍯 Send Magic Link";
     const errEl = document.getElementById("auth-error");
@@ -1884,7 +1886,7 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
     return;
   }
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await sbClient.auth.signInWithOtp({
     email: authEmail,
     options: { emailRedirectTo: window.location.origin }
   });
@@ -1912,21 +1914,27 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
 
 // Logout button
 document.getElementById("auth-logout").addEventListener("click", async () => {
-  if (supabase) await supabase.auth.signOut();
+  if (sbClient) await sbClient.auth.signOut();
   document.getElementById("auth-overlay").classList.remove("open");
   updateAuthUI(null);
 });
 
-// Supabase loaded in <head> — init immediately
-if (window.supabase) {
-  initSupabase();
-} else {
-  // Fallback: try again after short delay in case head script is still loading
-  setTimeout(() => {
-    if (window.supabase) initSupabase();
-    else console.warn("Supabase failed to load from CDN");
-  }, 2000);
-}
+// Supabase loaded in <head> — init on DOMContentLoaded to ensure elements exist
+// window.supabase is the CDN namespace; window.supabase.createClient is the function
+window.addEventListener("DOMContentLoaded", () => {
+  if (window.supabase && typeof window.supabase.createClient === "function") {
+    initSupabase();
+  } else {
+    // Script may still be loading — try after delay
+    setTimeout(() => {
+      if (window.supabase && typeof window.supabase.createClient === "function") {
+        initSupabase();
+      } else {
+        console.warn("Supabase CDN unavailable — auth disabled");
+      }
+    }, 3000);
+  }
+});
 
 </script>
 </body>
