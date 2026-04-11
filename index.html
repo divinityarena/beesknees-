@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Bee's Knees 🐝</title>
+  <!-- Supabase loaded in head to ensure it's available before any interaction -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -1859,17 +1861,26 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
   submitBtn.disabled    = true;
   submitBtn.textContent = "Sending… 🐝";
 
-  // Wait up to 5 seconds for Supabase to load if not ready yet
+  // Wait up to 8 seconds for Supabase to be ready
   let waited = 0;
-  while (!supabase && waited < 50) {
+  while (!supabase && waited < 80) {
     await new Promise(r => setTimeout(r, 100));
     waited++;
+    if (waited === 20) submitBtn.textContent = "Connecting… 🐝";
+    // Try to init again if window.supabase appeared
+    if (window.supabase && !supabase) initSupabase();
   }
+
+  console.log("Supabase ready:", !!supabase, "waited:", waited * 100 + "ms");
 
   if (!supabase) {
     submitBtn.disabled    = false;
     submitBtn.textContent = "🍯 Send Magic Link";
-    showError("Couldn't connect to sign in service. Please refresh and try again.");
+    const errEl = document.getElementById("auth-error");
+    if (errEl) {
+      errEl.textContent   = "⚠️ Sign in service unavailable. Please refresh the page and try again.";
+      errEl.style.display = "block";
+    }
     return;
   }
 
@@ -1906,23 +1917,16 @@ document.getElementById("auth-logout").addEventListener("click", async () => {
   updateAuthUI(null);
 });
 
-// Load Supabase dynamically — auth is bonus feature, not critical
-(function() {
-  const CDNS = [
-    "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js",
-    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js",
-  ];
-  let tried = 0;
-  function tryNext() {
-    if (tried >= CDNS.length) { console.warn("Supabase unavailable — auth disabled"); return; }
-    const s   = document.createElement("script");
-    s.src     = CDNS[tried++];
-    s.onload  = initSupabase;
-    s.onerror = tryNext;
-    document.head.appendChild(s);
-  }
-  tryNext();
-})();
+// Supabase loaded in <head> — init immediately
+if (window.supabase) {
+  initSupabase();
+} else {
+  // Fallback: try again after short delay in case head script is still loading
+  setTimeout(() => {
+    if (window.supabase) initSupabase();
+    else console.warn("Supabase failed to load from CDN");
+  }, 2000);
+}
 
 </script>
 </body>
