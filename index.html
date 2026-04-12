@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Bee's Knees 🐝</title>
   <!-- Supabase loaded in head to ensure it's available before any interaction -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -1886,9 +1886,22 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
     return;
   }
 
+  // Validate email before sending
+  if (!authEmail || !authEmail.includes("@")) {
+    submitBtn.disabled    = false;
+    submitBtn.textContent = "🍯 Send Magic Link";
+    const errEl = document.getElementById("auth-error");
+    if (errEl) { errEl.textContent = "⚠️ Please enter a valid email address."; errEl.style.display = "block"; }
+    return;
+  }
+
+  console.log("Sending magic link to:", authEmail, "redirect:", window.location.origin);
+
   const { error } = await sbClient.auth.signInWithOtp({
     email: authEmail,
-    options: { emailRedirectTo: window.location.origin }
+    options: {
+      emailRedirectTo: "https://beesknees.best"
+    }
   });
 
   console.log("Magic link result:", error ? "ERROR: " + error.message : "SUCCESS");
