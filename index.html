@@ -1110,6 +1110,7 @@
         <h2>Join the Hive 🐝</h2>
         <p>Enter your email and we'll send you a magic link — no password needed.</p>
         <input class="auth-input" type="email" id="auth-email" placeholder="your@email.com" />
+        <input class="auth-input" type="text" id="auth-city" placeholder="🏠 Your city (optional — e.g. Belfast)" style="margin-bottom:0.4rem;" />
         <div id="auth-error" style="display:none; font-size:0.82rem; color:#CC3300; background:#FFF0F0; border:1px solid #FFCCCC; border-radius:10px; padding:0.5rem 0.75rem; margin-bottom:0.5rem;"></div>
         <button class="auth-submit" id="auth-submit">🍯 Send Magic Link</button>
       </div>
@@ -1909,15 +1910,12 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
   if (error) {
     submitBtn.disabled    = false;
     submitBtn.textContent = "🍯 Send Magic Link";
-    // Show error inside modal so user can see it
     const errEl = document.getElementById("auth-error");
-    if (errEl) {
-      errEl.textContent = "⚠️ " + error.message;
-      errEl.style.display = "block";
-    } else {
-      alert("Error: " + error.message);
-    }
+    if (errEl) { errEl.textContent = "⚠️ " + error.message; errEl.style.display = "block"; }
   } else {
+    // Store city for after login
+    const cityVal = document.getElementById("auth-city")?.value.trim();
+    if (cityVal) { try { localStorage.setItem("bk_pending_city", cityVal); } catch(e) {} }
     const af = document.getElementById("auth-form-view");
     const as = document.getElementById("auth-success-view");
     if (af) af.style.display = "none";

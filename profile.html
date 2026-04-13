@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Profile · The Bee's Knees 🐝</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>My Hive Profile · The Bee's Knees 🐝</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -38,167 +38,93 @@
       pointer-events: none;
       z-index: 0;
     }
-    .page {
-      position: relative;
-      z-index: 1;
-      max-width: 580px;
-      margin: 0 auto;
-      padding: 2rem 1.25rem 5rem;
-    }
-    .nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 2rem;
-    }
-    .nav-logo {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.1rem;
-      font-weight: 900;
-      color: var(--deep-honey);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .nav-back {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--deep-honey);
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      border: 1.5px solid var(--honey);
-      border-radius: 50px;
-      padding: 0.45rem 1.1rem;
-      background: var(--white);
-      transition: all 0.2s;
-      box-shadow: 0 2px 10px rgba(200,120,0,0.15);
-    }
-    .nav-back:hover { background: var(--honey); color: var(--dark); transform: translateY(-2px); }
+    .page { position:relative; z-index:1; max-width:600px; margin:0 auto; padding:2rem 1.25rem 5rem; }
 
-    /* Not logged in state */
-    .not-logged-in {
-      text-align: center;
-      padding: 3rem 1rem;
-      background: var(--white);
-      border-radius: 24px;
-      border: 1.5px solid rgba(245,166,35,0.18);
-      box-shadow: 0 4px 28px var(--shadow);
-    }
-    .not-logged-in .bee { font-size: 3rem; display: block; margin-bottom: 0.75rem; }
-    .not-logged-in h2 { font-family: 'Playfair Display', serif; color: var(--deep-honey); font-size: 1.3rem; margin-bottom: 0.5rem; }
-    .not-logged-in p { font-size: 0.88rem; color: var(--soft); margin-bottom: 1.25rem; }
+    /* Nav */
+    .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; }
+    .nav-logo { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:900; color:var(--deep-honey); text-decoration:none; display:flex; align-items:center; gap:0.4rem; }
+    .nav-back { font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600; color:var(--deep-honey); text-decoration:none; display:inline-flex; align-items:center; gap:0.35rem; border:1.5px solid var(--honey); border-radius:50px; padding:0.45rem 1.1rem; background:var(--white); transition:all 0.2s; box-shadow:0 2px 10px rgba(200,120,0,0.15); }
+    .nav-back:hover { background:var(--honey); color:var(--dark); transform:translateY(-2px); }
+
+    /* Cards */
+    .card { background:var(--white); border-radius:24px; padding:1.5rem; margin-bottom:1.25rem; border:1.5px solid rgba(245,166,35,0.18); box-shadow:0 4px 24px var(--shadow); animation:slideUp 0.4s ease both; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
     /* Profile header */
-    .profile-header {
-      background: linear-gradient(135deg, var(--deep-honey), var(--amber));
-      border-radius: 24px;
-      padding: 1.75rem;
-      text-align: center;
-      margin-bottom: 1.25rem;
-      box-shadow: 0 4px 20px rgba(200,120,0,0.3);
-    }
-    .avatar {
-      width: 72px;
-      height: 72px;
-      background: rgba(255,255,255,0.25);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.2rem;
-      margin: 0 auto 0.75rem;
-      border: 2px solid rgba(255,255,255,0.4);
-    }
-    .profile-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.4rem;
-      font-weight: 900;
-      color: var(--white);
-      margin-bottom: 0.2rem;
-    }
-    .profile-email { font-size: 0.82rem; color: rgba(255,255,255,0.75); }
-    .profile-since { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 0.3rem; }
+    .profile-header { background:linear-gradient(135deg, var(--deep-honey), var(--amber)); border-radius:24px; padding:2rem; text-align:center; margin-bottom:1.25rem; box-shadow:0 4px 20px rgba(200,120,0,0.3); }
+    .avatar-wrap { position:relative; display:inline-block; margin-bottom:0.75rem; cursor:pointer; }
+    .avatar { width:80px; height:80px; background:rgba(255,255,255,0.25); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.5rem; margin:0 auto; border:2.5px solid rgba(255,255,255,0.5); transition:transform 0.2s; }
+    .avatar:hover { transform:scale(1.05); }
+    .avatar-hint { font-size:0.65rem; color:rgba(255,255,255,0.6); margin-top:0.3rem; font-style:italic; }
+    .profile-name { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:900; color:#fff; margin-bottom:0.2rem; }
+    .profile-email { font-size:0.82rem; color:rgba(255,255,255,0.75); margin-bottom:0.3rem; }
+    .profile-since { font-size:0.75rem; color:rgba(255,255,255,0.6); }
 
-    /* Stats row */
-    .stats-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-    }
-    .stat-card {
-      background: var(--white);
-      border-radius: 18px;
-      padding: 1.1rem;
-      text-align: center;
-      border: 1.5px solid rgba(245,166,35,0.18);
-      box-shadow: 0 3px 16px var(--shadow);
-    }
-    .stat-number { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; color: var(--deep-honey); }
-    .stat-label { font-size: 0.75rem; color: var(--soft); margin-top: 0.2rem; }
+    /* Bee rank */
+    .rank-badge { display:inline-flex; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.2); border:1.5px solid rgba(255,255,255,0.35); border-radius:50px; padding:0.3rem 0.9rem; font-size:0.82rem; font-weight:600; color:#fff; margin-top:0.6rem; }
 
-    /* Section cards */
-    .section-card {
-      background: var(--white);
-      border-radius: 20px;
-      padding: 1.5rem;
-      margin-bottom: 1.25rem;
-      border: 1.5px solid rgba(245,166,35,0.18);
-      box-shadow: 0 3px 16px var(--shadow);
-    }
-    .section-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--deep-honey);
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
+    /* Stats */
+    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; margin-bottom:1.25rem; }
+    .stat-card { background:var(--white); border-radius:18px; padding:1rem 0.75rem; text-align:center; border:1.5px solid rgba(245,166,35,0.18); box-shadow:0 3px 16px var(--shadow); }
+    .stat-num { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:900; color:var(--deep-honey); line-height:1; }
+    .stat-label { font-size:0.68rem; color:var(--soft); margin-top:0.3rem; line-height:1.3; }
+
+    /* Section title */
+    .section-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--deep-honey); margin-bottom:0.9rem; display:flex; align-items:center; gap:0.4rem; }
 
     /* Vote list */
-    .vote-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.7rem 0;
-      border-bottom: 1px solid var(--comb-dark);
-      gap: 0.75rem;
-    }
-    .vote-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .vote-name { font-size: 0.9rem; font-weight: 600; color: var(--dark); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .vote-date { font-size: 0.72rem; color: var(--soft); flex-shrink: 0; }
-    .vote-badge { font-size: 0.7rem; background: linear-gradient(135deg, var(--honey), var(--amber)); color: var(--dark); border-radius: 20px; padding: 0.15rem 0.5rem; font-weight: 600; flex-shrink: 0; }
+    .vote-item { display:flex; align-items:center; gap:0.75rem; padding:0.65rem 0; border-bottom:1px solid var(--comb-dark); }
+    .vote-item:last-child { border-bottom:none; padding-bottom:0; }
+    .vote-bee { font-size:1.1rem; flex-shrink:0; }
+    .vote-info { flex:1; min-width:0; }
+    .vote-name { font-size:0.9rem; font-weight:600; color:var(--dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .vote-date { font-size:0.72rem; color:var(--soft); margin-top:0.1rem; }
+    .vote-maps { font-size:0.72rem; color:var(--deep-honey); text-decoration:none; font-weight:600; border:1px solid var(--comb-dark); border-radius:6px; padding:0.18rem 0.5rem; background:var(--comb); flex-shrink:0; transition:background 0.15s; }
+    .vote-maps:hover { background:var(--comb-dark); }
+    .empty-state { text-align:center; padding:1.5rem 0; color:var(--soft); font-size:0.88rem; font-style:italic; }
 
-    .empty-state { text-align: center; padding: 1.5rem 0; color: var(--soft); font-size: 0.88rem; font-style: italic; }
+    /* City input */
+    .city-input { width:100%; font-family:'DM Sans',sans-serif; font-size:0.9rem; padding:0.65rem 1rem; border:1.5px solid var(--comb-dark); border-radius:12px; background:var(--comb); color:var(--dark); outline:none; margin-bottom:0.6rem; transition:border-color 0.2s; }
+    .city-input:focus { border-color:var(--honey); }
+    .save-btn { font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; color:var(--dark); background:linear-gradient(135deg,var(--honey),var(--amber)); border:none; border-radius:10px; padding:0.55rem 1.2rem; cursor:pointer; transition:transform 0.15s; }
+    .save-btn:hover { transform:translateY(-1px); }
 
-    /* Sign out button */
-    .signout-btn {
-      width: 100%;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--soft);
-      background: none;
-      border: 1.5px solid var(--comb-dark);
-      border-radius: 14px;
-      padding: 0.75rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .signout-btn:hover { border-color: var(--honey); color: var(--deep-honey); background: var(--comb); }
+    /* Game canvas */
+    #game-canvas { width:100%; border-radius:16px; display:block; cursor:pointer; background:#87CEEB; }
+    .game-controls { display:flex; align-items:center; justify-content:space-between; margin-top:0.75rem; }
+    .game-score { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--deep-honey); }
+    .game-btn { font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600; background:linear-gradient(135deg,var(--honey),var(--amber)); border:none; border-radius:10px; padding:0.5rem 1rem; cursor:pointer; color:var(--dark); transition:transform 0.15s; }
+    .game-btn:hover { transform:translateY(-1px); }
+    .game-hint { font-size:0.75rem; color:var(--soft); font-style:italic; text-align:center; margin-top:0.4rem; }
 
-    footer { text-align: center; margin-top: 3rem; font-size: 0.75rem; color: var(--soft); }
-    .footer-main { opacity: 0.6; margin-bottom: 0.3rem; }
-    .footer-copy { font-weight: 600; color: var(--deep-honey); opacity: 0.85; }
-    .footer-copy::before { content: "🐝 "; }
+    /* Delete account */
+    .danger-zone { border:1.5px solid rgba(200,50,50,0.25); border-radius:20px; padding:1.25rem; background:rgba(255,240,240,0.5); }
+    .danger-title { font-family:'Playfair Display',serif; font-size:0.95rem; font-weight:700; color:#CC3300; margin-bottom:0.4rem; }
+    .danger-text { font-size:0.82rem; color:#993300; margin-bottom:0.9rem; line-height:1.5; }
+    .delete-btn { font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600; color:#CC3300; background:none; border:1.5px solid rgba(200,50,50,0.4); border-radius:10px; padding:0.55rem 1.2rem; cursor:pointer; transition:all 0.2s; }
+    .delete-btn:hover { background:rgba(200,50,50,0.08); border-color:#CC3300; }
+    .signout-btn { width:100%; font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:600; color:var(--soft); background:none; border:1.5px solid var(--comb-dark); border-radius:14px; padding:0.75rem; cursor:pointer; transition:all 0.2s; }
+    .signout-btn:hover { border-color:var(--honey); color:var(--deep-honey); background:var(--comb); }
 
-    .loading { text-align: center; padding: 2rem; color: var(--soft); font-style: italic; }
+    /* Confirm modal */
+    .confirm-overlay { display:none; position:fixed; inset:0; background:rgba(26,16,0,0.65); z-index:1000; align-items:center; justify-content:center; padding:1.5rem; }
+    .confirm-overlay.open { display:flex; }
+    .confirm-modal { background:var(--white); border-radius:24px; padding:2rem; max-width:360px; width:100%; text-align:center; box-shadow:0 8px 40px rgba(26,16,0,0.25); }
+    .confirm-modal h3 { font-family:'Playfair Display',serif; font-size:1.2rem; color:#CC3300; margin-bottom:0.4rem; }
+    .confirm-modal .sting { font-size:1.8rem; margin-bottom:0.5rem; display:block; }
+    .confirm-modal p { font-size:0.85rem; color:var(--soft); margin-bottom:1.25rem; line-height:1.5; }
+    .confirm-btns { display:flex; gap:0.6rem; }
+    .confirm-cancel { flex:1; font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:600; color:var(--soft); background:var(--comb); border:1.5px solid var(--comb-dark); border-radius:12px; padding:0.7rem; cursor:pointer; }
+    .confirm-delete { flex:1; font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:600; color:#fff; background:#CC3300; border:none; border-radius:12px; padding:0.7rem; cursor:pointer; }
+
+    .loading { text-align:center; padding:3rem; color:var(--soft); font-style:italic; font-size:0.9rem; }
+    .not-logged { text-align:center; padding:3rem 1rem; background:var(--white); border-radius:24px; box-shadow:0 4px 24px var(--shadow); }
+    .not-logged h2 { font-family:'Playfair Display',serif; color:var(--deep-honey); font-size:1.2rem; margin:0.75rem 0 0.4rem; }
+    .back-link { display:inline-block; margin-top:1rem; background:linear-gradient(135deg,var(--honey),var(--amber)); color:var(--dark); font-family:'Playfair Display',serif; font-weight:700; font-size:0.95rem; padding:0.75rem 1.5rem; border-radius:14px; text-decoration:none; }
+
+    footer { text-align:center; margin-top:3rem; font-size:0.75rem; color:var(--soft); }
+    .footer-copy { font-weight:600; color:var(--deep-honey); opacity:0.85; }
+    .footer-copy::before { content:"🐝 "; }
   </style>
 </head>
 <body>
@@ -211,112 +137,436 @@
 
   <div id="loading" class="loading">🐝 Loading your hive profile…</div>
 
-  <!-- Not logged in -->
-  <div id="not-logged-in" style="display:none;">
-    <div class="not-logged-in">
-      <span class="bee">🔒</span>
-      <h2>Join the Hive First</h2>
-      <p>You need to be signed in to view your profile. Head back to the app and click Sign In.</p>
-      <a href="/" style="display:inline-block; background:linear-gradient(135deg,var(--honey),var(--amber)); color:var(--dark); font-family:'Playfair Display',serif; font-weight:700; font-size:0.95rem; padding:0.75rem 1.5rem; border-radius:14px; text-decoration:none; box-shadow:0 3px 14px rgba(200,120,0,0.3);">🐝 Back to the Hive</a>
-    </div>
+  <div id="not-logged" class="not-logged" style="display:none;">
+    <span style="font-size:2.5rem;">🔒</span>
+    <h2>Join the Hive First</h2>
+    <p style="font-size:0.85rem;color:var(--soft);">Sign in to view your profile.</p>
+    <a href="/" class="back-link">🐝 Back to the Hive</a>
   </div>
 
-  <!-- Logged in profile -->
   <div id="profile-content" style="display:none;">
 
+    <!-- Profile Header -->
     <div class="profile-header">
-      <div class="avatar">🐝</div>
-      <div class="profile-name" id="profile-name">—</div>
-      <div class="profile-email" id="profile-email">—</div>
-      <div class="profile-since" id="profile-since">—</div>
+      <div class="avatar-wrap" id="avatar-wrap" title="Click 3 times for a surprise…">
+        <div class="avatar" id="avatar-emoji">🐝</div>
+        <div class="avatar-hint">tap me…</div>
+      </div>
+      <div class="profile-name" id="p-name">—</div>
+      <div class="profile-email" id="p-email">—</div>
+      <div class="profile-since" id="p-since">—</div>
+      <div class="rank-badge" id="p-rank">🥚 Drone Egg</div>
     </div>
 
-    <div class="stats-row">
+    <!-- Stats -->
+    <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-number" id="stat-votes">0</div>
-        <div class="stat-label">🐝 Places Agreed</div>
+        <div class="stat-num" id="s-votes">0</div>
+        <div class="stat-label">🐝 Places<br>Agreed</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="stat-days">0</div>
-        <div class="stat-label">🍯 Days in the Hive</div>
+        <div class="stat-num" id="s-days">0</div>
+        <div class="stat-label">🍯 Days in<br>the Hive</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="s-rank">#—</div>
+        <div class="stat-label">👑 Bee<br>Rank</div>
       </div>
     </div>
 
-    <div class="section-card">
-      <div class="section-title">🐝 Places You've Agreed Are the Bee's Knees</div>
-      <div id="votes-list"><div class="empty-state">You haven't voted on any places yet — start scouting!</div></div>
+    <!-- Waggle Vote History -->
+    <div class="card">
+      <div class="section-title">🐝 Your Waggle Vote History</div>
+      <div id="vote-list"><div class="empty-state">No votes yet — start scouting!</div></div>
     </div>
 
-    <div class="section-card">
+    <!-- Home Hive / City -->
+    <div class="card">
+      <div class="section-title">📍 Your Home Hive</div>
+      <p style="font-size:0.82rem;color:var(--soft);margin-bottom:0.75rem;">Tell us your city and we'll personalise your results.</p>
+      <input class="city-input" type="text" id="city-input" placeholder="e.g. Belfast, Dublin, London…" />
+      <button class="save-btn" id="save-city">Save Location</button>
+      <span id="city-saved" style="font-size:0.78rem;color:#1a7a40;margin-left:0.5rem;display:none;">✅ Saved!</span>
+    </div>
+
+    <!-- Flappy Bee Game -->
+    <div class="card" id="game-card" style="display:none;">
+      <div class="section-title">🎮 Flappy Bee — Secret Game!</div>
+      <canvas id="game-canvas" height="280"></canvas>
+      <div class="game-controls">
+        <div class="game-score">Score: <span id="game-score">0</span> &nbsp;|&nbsp; Best: <span id="game-best">0</span></div>
+        <button class="game-btn" id="game-restart">Restart 🐝</button>
+      </div>
+      <div class="game-hint">Tap or press Space to flap · Avoid the honeycombs!</div>
+    </div>
+
+    <!-- Sign Out -->
+    <div class="card">
       <button class="signout-btn" id="signout-btn">Sign Out of the Hive</button>
+    </div>
+
+    <!-- Delete Account -->
+    <div class="card">
+      <div class="danger-zone">
+        <div class="danger-title">⚠️ Leave the Hive</div>
+        <div class="danger-text">Permanently delete your account and all your waggle votes. This cannot be undone.</div>
+        <button class="delete-btn" id="delete-btn">Delete My Account</button>
+      </div>
     </div>
 
   </div>
 
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-modal">
+    <span class="sting">🐝</span>
+    <h3>This will sting…</h3>
+    <p>Leave the hive? This will <strong>permanently delete</strong> your account and all your waggle votes. There's no going back.</p>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" id="confirm-cancel">Stay in the Hive</button>
+      <button class="confirm-delete" id="confirm-delete">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
 <footer>
-  <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
   <div class="footer-copy">&copy; 2025 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
 </footer>
 
 <script>
 const SUPABASE_URL  = "https://hwpcowjejebhapgqhnpl.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cGNvd2plamViaGFwZ3FobnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzA4NjgsImV4cCI6MjA5MTMwNjg2OH0.3dqzEA_Qw8RbJOWUNMZIFErVFRqy49BFRAbP8Bk6klw";
-const supabase      = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const sbClient      = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+// ── Bee Rank ──────────────────────────────────────────────────
+function beeRank(votes) {
+  if (votes >= 20) return { label: "👑 Queen Bee",   rank: "👑" };
+  if (votes >= 10) return { label: "🍯 Honey Maker", rank: "🍯" };
+  if (votes >= 5)  return { label: "🌸 Scout Bee",   rank: "🌸" };
+  if (votes >= 1)  return { label: "🐝 Worker Bee",  rank: "🐝" };
+  return               { label: "🥚 Drone Egg",       rank: "🥚" };
+}
+
+// ── Avatar bee types ──────────────────────────────────────────
+const BEE_TYPES = ["🐝","🍯","🌸","🌻","🌼","🍀","🦋","🌺"];
+let avatarClickCount = 0, avatarTimer = null;
+
+document.getElementById("avatar-wrap").addEventListener("click", () => {
+  avatarClickCount++;
+  clearTimeout(avatarTimer);
+  // Cycle bee type on each click
+  const bee = document.getElementById("avatar-emoji");
+  bee.textContent = BEE_TYPES[avatarClickCount % BEE_TYPES.length];
+
+  if (avatarClickCount >= 3) {
+    avatarClickCount = 0;
+    // Reveal the game!
+    const gameCard = document.getElementById("game-card");
+    gameCard.style.display = "block";
+    gameCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    initGame();
+    return;
+  }
+  avatarTimer = setTimeout(() => { avatarClickCount = 0; }, 1500);
+});
+
+// ── Load Profile ──────────────────────────────────────────────
 async function loadProfile() {
-  const { data: { session } } = await supabase.auth.getSession();
-
+  const { data: { session } } = await sbClient.auth.getSession();
   document.getElementById("loading").style.display = "none";
 
   if (!session) {
-    document.getElementById("not-logged-in").style.display = "block";
+    document.getElementById("not-logged").style.display = "block";
     return;
   }
 
   const user = session.user;
   document.getElementById("profile-content").style.display = "block";
 
-  // Name and email
+  // Basic info
   const name  = user.user_metadata?.display_name || user.email.split("@")[0];
   const since = new Date(user.created_at);
-  const days  = Math.floor((Date.now() - since) / (1000 * 60 * 60 * 24));
+  const days  = Math.floor((Date.now() - since) / (1000*60*60*24));
 
-  document.getElementById("profile-name").textContent  = name;
-  document.getElementById("profile-email").textContent = user.email;
-  document.getElementById("profile-since").textContent = `Member since ${since.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`;
-  document.getElementById("stat-days").textContent     = days;
+  document.getElementById("p-name").textContent  = name;
+  document.getElementById("p-email").textContent = user.email;
+  document.getElementById("p-since").textContent = `Buzzing since ${since.toLocaleDateString("en-GB", { month:"long", year:"numeric" })}`;
+  document.getElementById("s-days").textContent  = days;
 
-  // Load votes from Supabase
-  const { data: votes, error } = await supabase
+  // Load votes
+  const { data: votes } = await sbClient
     .from("user_votes")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  document.getElementById("stat-votes").textContent = votes?.length || 0;
+  const voteCount = votes?.length || 0;
+  const rank      = beeRank(voteCount);
+  document.getElementById("s-votes").textContent = voteCount;
+  document.getElementById("p-rank").textContent  = rank.label;
+  document.getElementById("s-rank").textContent  = rank.rank;
 
-  const list = document.getElementById("votes-list");
+  // Render vote list
+  const list = document.getElementById("vote-list");
   if (votes && votes.length > 0) {
     list.innerHTML = votes.map(v => `
       <div class="vote-item">
-        <div class="vote-name" title="${escHtml(v.place_name)}">${escHtml(v.place_name)}</div>
-        <div class="vote-date">${new Date(v.created_at).toLocaleDateString("en-GB")}</div>
-        <div class="vote-badge">🐝 Agreed</div>
+        <span class="vote-bee">🐝</span>
+        <div class="vote-info">
+          <div class="vote-name">${escHtml(v.place_name)}</div>
+          <div class="vote-date">${new Date(v.created_at).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })}</div>
+        </div>
+        <a class="vote-maps" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.place_name)}" target="_blank" rel="noopener">🗺️ Maps</a>
       </div>
     `).join("");
-  } else {
-    list.innerHTML = `<div class="empty-state">You haven't voted yet — start scouting the hive!</div>`;
   }
+
+  // Load city
+  const { data: profile } = await sbClient
+    .from("profiles")
+    .select("city")
+    .eq("id", user.id)
+    .single();
+  if (profile?.city) document.getElementById("city-input").value = profile.city;
+
+  // Save city
+  document.getElementById("save-city").addEventListener("click", async () => {
+    const city = document.getElementById("city-input").value.trim();
+    await sbClient.from("profiles").upsert({ id: user.id, city }, { onConflict: "id" });
+    const saved = document.getElementById("city-saved");
+    saved.style.display = "inline";
+    setTimeout(() => { saved.style.display = "none"; }, 2500);
+  });
 
   // Sign out
   document.getElementById("signout-btn").addEventListener("click", async () => {
-    await supabase.auth.signOut();
+    await sbClient.auth.signOut();
     window.location.href = "/";
+  });
+
+  // Delete account
+  document.getElementById("delete-btn").addEventListener("click", () => {
+    document.getElementById("confirm-overlay").classList.add("open");
+  });
+  document.getElementById("confirm-cancel").addEventListener("click", () => {
+    document.getElementById("confirm-overlay").classList.remove("open");
+  });
+  document.getElementById("confirm-delete").addEventListener("click", async () => {
+    try {
+      // Delete user data
+      await sbClient.from("user_votes").delete().eq("user_id", user.id);
+      await sbClient.from("profiles").delete().eq("id", user.id);
+      // Sign out (Supabase free tier can't delete auth users client-side)
+      await sbClient.auth.signOut();
+      window.location.href = "/?deleted=1";
+    } catch(e) {
+      alert("Something went wrong. Please try again.");
+    }
   });
 }
 
+// ── Flappy Bee Game ───────────────────────────────────────────
+let gameRunning = false, gameOver = false;
+let beeY, beeVel, score, bestScore = 0, pipes, frames, gameAnimId;
+
+const GRAVITY   = 0.35;
+const FLAP      = -7;
+const PIPE_W    = 52;
+const PIPE_GAP  = 130;
+const PIPE_SPD  = 2.2;
+const BEE_X     = 70;
+const BEE_R     = 18;
+
+function initGame() {
+  const canvas = document.getElementById("game-canvas");
+  if (canvas._inited) return;
+  canvas._inited = true;
+  startGame();
+
+  function flap() {
+    if (gameOver) { startGame(); return; }
+    if (!gameRunning) { gameRunning = true; }
+    beeVel = FLAP;
+  }
+
+  canvas.addEventListener("click", flap);
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space" && document.getElementById("game-card").style.display !== "none") {
+      e.preventDefault(); flap();
+    }
+  });
+  document.getElementById("game-restart").addEventListener("click", startGame);
+}
+
+function startGame() {
+  const canvas = document.getElementById("game-canvas");
+  const W = canvas.offsetWidth;
+  canvas.width  = W;
+  canvas.height = 280;
+
+  beeY      = canvas.height / 2;
+  beeVel    = 0;
+  score     = 0;
+  pipes     = [];
+  frames    = 0;
+  gameOver  = false;
+  gameRunning = false;
+
+  document.getElementById("game-score").textContent = 0;
+  if (gameAnimId) cancelAnimationFrame(gameAnimId);
+  gameLoop(canvas);
+}
+
+function gameLoop(canvas) {
+  const ctx = canvas.getContext("2d");
+  const W   = canvas.width;
+  const H   = canvas.height;
+
+  function draw() {
+    // Sky gradient
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, "#87CEEB");
+    sky.addColorStop(1, "#E0F4FF");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    // Ground
+    ctx.fillStyle = "#8B6914";
+    ctx.fillRect(0, H - 24, W, 24);
+    ctx.fillStyle = "#A0832A";
+    ctx.fillRect(0, H - 24, W, 6);
+
+    // Pipes (honeycomb style)
+    frames++;
+    if (gameRunning && frames % 90 === 0) {
+      const gapY = 60 + Math.random() * (H - PIPE_GAP - 100);
+      pipes.push({ x: W, gapY });
+    }
+
+    for (let i = pipes.length - 1; i >= 0; i--) {
+      const p = pipes[i];
+      if (gameRunning) p.x -= PIPE_SPD;
+
+      // Draw comb pipes
+      drawComb(ctx, p.x, 0, PIPE_W, p.gapY);
+      drawComb(ctx, p.x, p.gapY + PIPE_GAP, PIPE_W, H - p.gapY - PIPE_GAP - 24);
+
+      // Score
+      if (gameRunning && p.x + PIPE_W < BEE_X && !p.scored) {
+        p.scored = true;
+        score++;
+        if (score > bestScore) bestScore = score;
+        document.getElementById("game-score").textContent = score;
+        document.getElementById("game-best").textContent  = bestScore;
+      }
+
+      // Collision
+      if (
+        BEE_X + BEE_R > p.x + 4 &&
+        BEE_X - BEE_R < p.x + PIPE_W - 4 &&
+        (beeY - BEE_R < p.gapY || beeY + BEE_R > p.gapY + PIPE_GAP)
+      ) { endGame(ctx, W, H); return; }
+
+      if (p.x + PIPE_W < 0) pipes.splice(i, 1);
+    }
+
+    // Physics
+    if (gameRunning) {
+      beeVel += GRAVITY;
+      beeY   += beeVel;
+    }
+
+    // Ground/ceiling collision
+    if (beeY + BEE_R >= H - 24 || beeY - BEE_R <= 0) {
+      endGame(ctx, W, H); return;
+    }
+
+    // Draw bee
+    ctx.font = `${BEE_R * 2}px serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const tilt = Math.max(-30, Math.min(30, beeVel * 3));
+    ctx.save();
+    ctx.translate(BEE_X, beeY);
+    ctx.rotate(tilt * Math.PI / 180);
+    ctx.fillText("🐝", 0, 0);
+    ctx.restore();
+
+    // Start prompt
+    if (!gameRunning && !gameOver) {
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 16px 'DM Sans', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("🐝 Tap to start Flappy Bee!", W/2, H/2);
+      ctx.font = "13px 'DM Sans', sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillText("Avoid the honeycombs!", W/2, H/2 + 26);
+    }
+
+    gameAnimId = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function drawComb(ctx, x, y, w, h) {
+  if (h <= 0) return;
+  // Main body
+  ctx.fillStyle = "#F5A623";
+  ctx.fillRect(x, y, w, h);
+  // Honeycomb pattern
+  ctx.fillStyle = "rgba(200,120,0,0.3)";
+  const cell = 14;
+  for (let cy = y; cy < y + h; cy += cell * 0.866) {
+    const offset = (Math.floor((cy - y) / (cell * 0.866)) % 2) * (cell / 2);
+    for (let cx = x + offset; cx < x + w; cx += cell) {
+      drawHex(ctx, cx + cell/2, cy + cell/2, cell/2 - 1);
+    }
+  }
+  // Edge highlight
+  ctx.fillStyle = "#C67C00";
+  ctx.fillRect(x, y, 3, h);
+  ctx.fillRect(x + w - 3, y, 3, h);
+}
+
+function drawHex(ctx, cx, cy, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const angle = Math.PI / 3 * i - Math.PI / 6;
+    const px = cx + r * Math.cos(angle);
+    const py = cy + r * Math.sin(angle);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function endGame(ctx, W, H) {
+  gameOver    = true;
+  gameRunning = false;
+  cancelAnimationFrame(gameAnimId);
+
+  ctx.fillStyle = "rgba(26,16,0,0.65)";
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#F5A623";
+  ctx.font      = "bold 20px 'Playfair Display', Georgia, serif";
+  ctx.fillText("🐝 Game Over!", W/2, H/2 - 30);
+
+  ctx.fillStyle = "#fff";
+  ctx.font      = "15px 'DM Sans', sans-serif";
+  ctx.fillText(`Score: ${score}  |  Best: ${bestScore}`, W/2, H/2 + 2);
+
+  ctx.font      = "13px 'DM Sans', sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.fillText("Tap to play again!", W/2, H/2 + 30);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
 function escHtml(str) {
   const d = document.createElement("div");
   d.textContent = str || "";
