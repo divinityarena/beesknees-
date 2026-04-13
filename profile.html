@@ -355,10 +355,13 @@ async function loadProfile() {
   });
   document.getElementById("confirm-delete").addEventListener("click", async () => {
     try {
-      // Delete user data
-      await sbClient.from("user_votes").delete().eq("user_id", user.id);
+      // Anonymise votes — keep them for our data but remove user link
+      await sbClient.from("user_votes")
+        .update({ user_id: null })
+        .eq("user_id", user.id);
+      // Delete profile
       await sbClient.from("profiles").delete().eq("id", user.id);
-      // Sign out (Supabase free tier can't delete auth users client-side)
+      // Sign out
       await sbClient.auth.signOut();
       window.location.href = "/?deleted=1";
     } catch(e) {
@@ -371,13 +374,13 @@ async function loadProfile() {
 let gameRunning = false, gameOver = false;
 let beeY, beeVel, score, bestScore = 0, pipes, frames, gameAnimId;
 
-const GRAVITY   = 0.35;
-const FLAP      = -7;
-const PIPE_W    = 52;
-const PIPE_GAP  = 130;
-const PIPE_SPD  = 2.2;
+const GRAVITY   = 0.28;   // lighter gravity
+const FLAP      = -6.5;   // gentler flap
+const PIPE_W    = 48;
+const PIPE_GAP  = 165;    // bigger gap — easier!
+const PIPE_SPD  = 1.8;    // slower pipes
 const BEE_X     = 70;
-const BEE_R     = 18;
+const BEE_R     = 16;
 
 function initGame() {
   const canvas = document.getElementById("game-canvas");
@@ -440,7 +443,7 @@ function gameLoop(canvas) {
 
     // Pipes (honeycomb style)
     frames++;
-    if (gameRunning && frames % 90 === 0) {
+    if (gameRunning && frames % 110 === 0) {  // more space between pipes
       const gapY = 60 + Math.random() * (H - PIPE_GAP - 100);
       pipes.push({ x: W, gapY });
     }
@@ -491,6 +494,7 @@ function gameLoop(canvas) {
     ctx.save();
     ctx.translate(BEE_X, beeY);
     ctx.rotate(tilt * Math.PI / 180);
+    ctx.scale(-1, 1);  // flip horizontally so bee faces right
     ctx.fillText("🐝", 0, 0);
     ctx.restore();
 
