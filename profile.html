@@ -239,6 +239,7 @@
 const SUPABASE_URL  = "https://hwpcowjejebhapgqhnpl.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cGNvd2plamViaGFwZ3FobnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzA4NjgsImV4cCI6MjA5MTMwNjg2OH0.3dqzEA_Qw8RbJOWUNMZIFErVFRqy49BFRAbP8Bk6klw";
 const sbClient      = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let   currentUser   = null; // set in loadProfile, used by endGame to persist score
 
 // ── Bee Rank ──────────────────────────────────────────────────
 function beeRank(votes) {
@@ -282,7 +283,8 @@ async function loadProfile() {
     return;
   }
 
-  const user = session.user;
+  currentUser = session.user;
+  const user  = session.user;
   document.getElementById("profile-content").style.display = "block";
 
   // Basic info
@@ -323,13 +325,17 @@ async function loadProfile() {
     `).join("");
   }
 
-  // Load city
+  // Load city and flappy best score from profiles
   const { data: profile } = await sbClient
     .from("profiles")
-    .select("city")
+    .select("city, flappy_best")
     .eq("id", user.id)
     .single();
   if (profile?.city) document.getElementById("city-input").value = profile.city;
+  if (profile?.flappy_best && profile.flappy_best > 0) {
+    bestScore = profile.flappy_best;
+    document.getElementById("game-best").textContent = bestScore;
+  }
 
   // Save city
   document.getElementById("save-city").addEventListener("click", async () => {
@@ -552,6 +558,19 @@ function endGame(ctx, W, H) {
   gameOver    = true;
   gameRunning = false;
   cancelAnimationFrame(gameAnimId);
+
+  // Save new best score to Supabase if logged in and it's a new record
+  if (score > bestScore) {
+    bestScore = score;
+    document.getElementById("game-best").textContent = bestScore;
+    // Persist to profiles table — fire and forget
+    if (sbClient && currentUser) {
+      sbClient.from("profiles")
+        .upsert({ id: currentUser.id, flappy_best: bestScore }, { onConflict: "id" })
+        .then(() => console.log("🐝 Flappy best score saved:", bestScore))
+        .catch(e => console.warn("Score save failed:", e.message));
+    }
+  }
 
   ctx.fillStyle = "rgba(26,16,0,0.65)";
   ctx.fillRect(0, 0, W, H);

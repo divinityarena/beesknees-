@@ -909,6 +909,200 @@
     }
     .partner-name span { color: var(--deep-honey); }
 
+    /* ── Tip Jar ─────────────────────────────────────────────── */
+    .tip-jar-section {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 1.4rem 1.5rem;
+      margin-top: 1.5rem;
+      box-shadow: 0 4px 24px var(--shadow);
+      border: 1.5px solid rgba(245,166,35,0.18);
+      text-align: center;
+    }
+    .tip-jar-emoji {
+      font-size: 2.2rem;
+      display: block;
+      margin-bottom: 0.4rem;
+      animation: bob 3s ease-in-out infinite;
+    }
+    .tip-jar-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--deep-honey);
+      margin-bottom: 0.2rem;
+    }
+    .tip-jar-sub {
+      font-size: 0.78rem;
+      color: var(--soft);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    .tip-btns {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .tip-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.55rem 1.1rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      color: var(--dark);
+      background: linear-gradient(135deg, var(--honey), var(--amber));
+      box-shadow: 0 3px 12px rgba(200,120,0,0.3);
+    }
+    .tip-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(200,120,0,0.45); }
+    .tip-btn.coffee { background: #FFDD00; color: #000; box-shadow: 0 3px 12px rgba(255,221,0,0.4); }
+    .tip-btn.coffee:hover { box-shadow: 0 5px 18px rgba(255,221,0,0.55); }
+    .tip-thanks {
+      display: none;
+      background: rgba(34,160,80,0.1);
+      border: 1.5px solid rgba(34,160,80,0.3);
+      border-radius: 12px;
+      padding: 0.7rem;
+      color: #1a7a40;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-top: 0.75rem;
+    }
+
+    /* ── Honey Pot Banner ────────────────────────────────────── */
+    .honeypot-banner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: linear-gradient(135deg, #FFF8DC, #FFFAED);
+      border: 2px solid var(--honey);
+      border-radius: 20px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 3px 18px rgba(200,120,0,0.18);
+      animation: slideUp 0.4s ease both;
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.15s;
+      text-decoration: none;
+    }
+    .honeypot-banner:hover {
+      box-shadow: 0 5px 24px rgba(200,120,0,0.3);
+      transform: translateY(-2px);
+    }
+    .honeypot-jar { font-size: 2.4rem; flex-shrink: 0; filter: drop-shadow(0 2px 6px rgba(200,120,0,0.3)); }
+    .honeypot-info { flex: 1; min-width: 0; }
+    .honeypot-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--deep-honey);
+      margin-bottom: 0.2rem;
+    }
+    .honeypot-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .honeypot-votes {
+      font-size: 0.75rem;
+      color: var(--soft);
+      margin-top: 0.15rem;
+    }
+    .honeypot-arrow {
+      font-size: 1.1rem;
+      color: var(--honey);
+      flex-shrink: 0;
+    }
+
+    /* ── Search Loading Overlay ──────────────────────────────── */
+    .search-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26,16,0,0.55);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+    .search-overlay.active { display: flex; }
+    .search-overlay-card {
+      background: var(--white);
+      border-radius: 28px;
+      padding: 2.2rem 2.5rem;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(26,16,0,0.25);
+      border: 1.5px solid rgba(245,166,35,0.25);
+      max-width: 320px;
+      width: 90%;
+    }
+    .search-overlay-bee {
+      font-size: 3.5rem;
+      display: block;
+      margin-bottom: 0.6rem;
+      animation: searchFly 1.4s ease-in-out infinite;
+    }
+    @keyframes searchFly {
+      0%,100% { transform: translateY(0) rotate(-8deg) scale(1); }
+      25%      { transform: translateY(-14px) rotate(5deg) scale(1.08); }
+      50%      { transform: translateY(-6px) rotate(-3deg) scale(1.04); }
+      75%      { transform: translateY(-18px) rotate(8deg) scale(1.1); }
+    }
+    .search-overlay-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: var(--deep-honey);
+      margin-bottom: 0.4rem;
+    }
+    .search-overlay-msg {
+      font-size: 0.85rem;
+      color: var(--soft);
+      line-height: 1.5;
+    }
+    .search-dots span {
+      display: inline-block;
+      width: 7px; height: 7px;
+      background: var(--honey);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: dotBounce 1.2s ease-in-out infinite;
+    }
+    .search-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .search-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotBounce {
+      0%,80%,100% { transform: scale(0.7); opacity: 0.5; }
+      40%          { transform: scale(1.2); opacity: 1; }
+    }
+    .search-stage-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--deep-honey);
+      background: rgba(245,166,35,0.12);
+      border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 50px;
+      padding: 0.3rem 0.8rem;
+      margin-top: 0.9rem;
+    }
+
     /* ── Footer ── */
     footer {
       text-align: center;
@@ -1095,6 +1289,19 @@
 </head>
 
 <body>
+
+<!-- Search Loading Overlay -->
+<div class="search-overlay" id="search-overlay">
+  <div class="search-overlay-card">
+    <span class="search-overlay-bee">🐝</span>
+    <div class="search-overlay-title" id="overlay-title">Scouting the Hive…</div>
+    <div class="search-overlay-msg" id="overlay-msg">Finding the best spots near you</div>
+    <div class="search-dots" style="margin-top:0.75rem;">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="search-stage-pill" id="overlay-stage">📡 Checking location</div>
+  </div>
+</div>
 <div class="app">
 
   <nav style="display:flex; justify-content:flex-end; gap:0.5rem; margin-bottom:0.75rem; align-items:center;">
@@ -1266,6 +1473,24 @@
 
 </div>
 
+  <!-- Tip Jar Section -->
+  <div class="tip-jar-section" id="tip-jar">
+    <span class="tip-jar-emoji">🍯</span>
+    <div class="tip-jar-title">Love The Bee's Knees?</div>
+    <div class="tip-jar-sub">We're an indie team in Belfast building this for free.<br>A wee tip keeps the hive buzzing! ☕</div>
+    <div class="tip-btns">
+      <a class="tip-btn coffee" href="https://www.buymeacoffee.com/goibniudevs" target="_blank" rel="noopener" id="tip-coffee-btn">
+        ☕ Buy us a coffee
+      </a>
+      <a class="tip-btn" href="https://ko-fi.com/goibniudevs" target="_blank" rel="noopener" id="tip-kofi-btn">
+        🍯 Ko-fi tip
+      </a>
+    </div>
+    <div class="tip-thanks" id="tip-thanks">
+      🐝 Thank you! You're the bee's knees! 🍯
+    </div>
+  </div>
+
 <footer>
   <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
   <div class="footer-nav" style="margin: 0.4rem 0;">
@@ -1399,7 +1624,7 @@ document.getElementById("search-btn").addEventListener("click", async () => {
   try {
     if (!userLat || !userLng || !locationText.startsWith("📡")) {
       if (!locationText) return showError("Please enter a location or use GPS.");
-      showBuzz("Scouting your location… 🗺️");
+      showOverlay("Scouting your location…", "Pinpointing where you are", "🗺️ Geocoding address…");
       const coords = await geocodeLocation(locationText);
       userLat = coords.lat;
       userLng = coords.lng;
@@ -1408,9 +1633,10 @@ document.getElementById("search-btn").addEventListener("click", async () => {
     return showError(err.message);
   }
 
-  showBuzz("Buzzing around the hive for the best spots… 🐝");
+  showOverlay("Scouting the Hive…", "Finding the best spots near you", "🔍 Searching Google & Foursquare…");
   searchBtn.disabled   = true;
   resultsDiv.innerHTML = "";
+  statusDiv.style.display = "none";
 
   // Bee animation
   const bee    = document.getElementById("header-bee");
@@ -1426,17 +1652,39 @@ document.getElementById("search-btn").addEventListener("click", async () => {
   }
 
   try {
-    const url  = `${API_BASE}/google-places?lat=${userLat}&lng=${userLng}&query=${encodeURIComponent(query)}&radius=${selectedRadius}`;
-    const res  = await fetch(url);
-    const data = await res.json();
+    updateOverlayStage("🐝 Polling both hives…");
+    const [placesRes, honeypotRes] = await Promise.allSettled([
+      fetch(`${API_BASE}/google-places?lat=${userLat}&lng=${userLng}&query=${encodeURIComponent(query)}&radius=${selectedRadius}`),
+      fetch(`${API_BASE}/honeypot?query=${encodeURIComponent(query)}&lat=${userLat}&lng=${userLng}&radius=${selectedRadius}`)
+    ]);
 
-    if (!res.ok) throw new Error(data.error || "Server error");
+    const res  = placesRes.status === "fulfilled"   ? placesRes.value   : null;
+    const hpRes = honeypotRes.status === "fulfilled" ? honeypotRes.value : null;
+
+    if (!res || !res.ok) {
+      const errData = res ? await res.json() : {};
+      throw new Error(errData.error || "Server error");
+    }
+
+    const data = await res.json();
     if (!data.results || !data.results.length) {
+      hideOverlay();
       showError("No spots found nearby. Try a larger radius or different search. 🍯");
       return;
     }
 
-    renderResults(data.results, query);
+    // Parse honey pot if available
+    let honeypot = null;
+    if (hpRes && hpRes.ok) {
+      const hpData = await hpRes.json();
+      honeypot = hpData.honeypot || null;
+    }
+
+    updateOverlayStage("✨ Ranking by Hive Score™…");
+    await new Promise(r => setTimeout(r, 400)); // brief pause so stage is visible
+
+    hideOverlay();
+    renderResults(data.results, query, honeypot);
     statusDiv.style.display = "none";
 
     // Load waggle votes
@@ -1460,6 +1708,7 @@ document.getElementById("search-btn").addEventListener("click", async () => {
     window.history.replaceState({}, "", `?${params.toString()}`);
 
   } catch (err) {
+    hideOverlay();
     showError("Couldn't reach the hive server. Make sure it's running. 🐝");
     console.error(err);
   } finally {
@@ -1468,7 +1717,7 @@ document.getElementById("search-btn").addEventListener("click", async () => {
 });
 
 // ── Render results ────────────────────────────────────────────
-function renderResults(rawPlaces, query) {
+function renderResults(rawPlaces, query, honeypot) {
   const resultsDiv = document.getElementById("results");
   resultsDiv.innerHTML = "";
 
@@ -1483,6 +1732,27 @@ function renderResults(rawPlaces, query) {
     <p>🍯 Top picks within ${(selectedRadius / 1000).toFixed(0)} km · Ranked by the hive</p>
   `;
   resultsDiv.appendChild(heading);
+
+  // ── Honey Pot Banner ─────────────────────────────────────────
+  // Show if we have a community favourite with 3+ votes that's in the results
+  if (honeypot && honeypot.vote_count >= 3) {
+    const matchedPlace = sorted.find(p => p.place_id === honeypot.place_id);
+    const banner = document.createElement("a");
+    banner.className = "honeypot-banner";
+    banner.href = matchedPlace ? safeMapsUrl(matchedPlace) : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(honeypot.place_name)}`;
+    banner.target = "_blank";
+    banner.rel = "noopener";
+    banner.innerHTML = `
+      <span class="honeypot-jar">🍯</span>
+      <div class="honeypot-info">
+        <div class="honeypot-label">🐝 The Hive's Favourite</div>
+        <div class="honeypot-name">${escHtml(honeypot.place_name)}</div>
+        <div class="honeypot-votes">${honeypot.vote_count} bees have crowned this their favourite</div>
+      </div>
+      <span class="honeypot-arrow">→</span>
+    `;
+    resultsDiv.appendChild(banner);
+  }
 
   // Share button
   const shareRow = document.createElement("div");
@@ -1648,7 +1918,14 @@ async function castWaggle(placeId, placeName, btn) {
     const vres    = await fetch(`${API_BASE}/vote`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ place_id: placeId, place_name: placeName, voter_id: voterId }),
+      body:    JSON.stringify({
+        place_id:     placeId,
+        place_name:   placeName,
+        voter_id:     voterId,
+        search_query: selectedQuery || document.getElementById("query-input")?.value.trim() || null,
+        area_lat:     userLat,
+        area_lng:     userLng,
+      }),
     });
     const vdata = await vres.json();
     // Also save to Supabase if logged in
@@ -1771,6 +2048,21 @@ function escHtml(str) {
   d.textContent = str;
   return d.innerHTML;
 }
+function showOverlay(title, msg, stage) {
+  const overlay = document.getElementById("search-overlay");
+  document.getElementById("overlay-title").textContent = title;
+  document.getElementById("overlay-msg").textContent   = msg;
+  document.getElementById("overlay-stage").textContent = stage;
+  overlay.classList.add("active");
+}
+function hideOverlay() {
+  document.getElementById("search-overlay").classList.remove("active");
+}
+function updateOverlayStage(stage) {
+  const el = document.getElementById("overlay-stage");
+  if (el) el.textContent = stage;
+}
+
 function showBuzz(msg) {
   const statusDiv  = document.getElementById("status");
   const resultsDiv = document.getElementById("results");
@@ -1779,11 +2071,25 @@ function showBuzz(msg) {
   resultsDiv.innerHTML     = "";
 }
 function showError(msg) {
+  hideOverlay();
   const statusDiv = document.getElementById("status");
   statusDiv.style.display = "block";
   statusDiv.innerHTML     = `<div class="error-msg">⚠️ ${escHtml(msg)}</div>`;
   document.getElementById("search-btn").disabled = false;
 }
+
+// ── Tip Jar ───────────────────────────────────────────────────
+["tip-coffee-btn","tip-kofi-btn"].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener("click", () => {
+    const thanks = document.getElementById("tip-thanks");
+    if (thanks) {
+      thanks.style.display = "block";
+      setTimeout(() => { thanks.style.display = "none"; }, 4000);
+    }
+  });
+});
 
 // ── Supabase Auth ─────────────────────────────────────────────
 const SUPABASE_URL  = "https://hwpcowjejebhapgqhnpl.supabase.co";
@@ -1802,10 +2108,33 @@ function updateAuthUI(user) {
     document.querySelectorAll(".waggle-btn").forEach(b => {
       if (!b.classList.contains("voted")) { b.disabled = false; b.textContent = "🐝 This is the Bee's Knees!"; }
     });
+    // Pre-fill location from saved profile city if location bar is empty
+    prefillLocationFromProfile(user);
   } else {
     authBtn.textContent = "🐝 Sign In";
     authBtn.classList.remove("logged-in");
   }
+}
+
+// Pre-fill the location bar from the user's saved city in Supabase
+async function prefillLocationFromProfile(user) {
+  if (!sbClient || !user) return;
+  const locInput = document.getElementById("location-input");
+  if (!locInput) return;
+  // Only fill if it's currently empty or still showing GPS coords
+  if (locInput.value && !locInput.value.startsWith("📡 GPS")) return;
+  try {
+    const { data: profile } = await sbClient
+      .from("profiles")
+      .select("city")
+      .eq("id", user.id)
+      .single();
+    if (profile?.city && !locInput.value) {
+      locInput.value = profile.city;
+      locInput.style.borderColor = "var(--honey)";
+      setTimeout(() => { locInput.style.borderColor = ""; }, 1500);
+    }
+  } catch(e) { /* profile may not exist yet */ }
 }
 
 function showAuthModal() {

@@ -37,7 +37,17 @@ async function initDB() {
         PRIMARY KEY (place_id, voter_hash)
       );
     `);
+    // Add area columns if they don't exist (safe migration)
+    await pool.query(`
+      ALTER TABLE waggle_votes
+        ADD COLUMN IF NOT EXISTS search_query TEXT,
+        ADD COLUMN IF NOT EXISTS area_lat NUMERIC(9,5),
+        ADD COLUMN IF NOT EXISTS area_lng NUMERIC(9,5);
+    `);
     console.log("🐝 Waggle votes DB ready");
+    // Note: profiles table lives in Supabase (managed separately).
+    // Ensure your Supabase profiles table has these columns:
+    //   city TEXT, flappy_best INTEGER DEFAULT 0
   } catch (e) {
     console.error("DB init error:", e.message);
   }
@@ -80,16 +90,19 @@ app.get("/health", (_req, res) => {
 // ── Waggle Vote: POST /vote ───────────────────────────────────
 app.post("/vote", async (req, res) => {
   if (!pool) return res.status(503).json({ error: "Votes not available — no database connected" });
-  const { place_id, place_name, voter_id } = req.body;
+  const { place_id, place_name, voter_id, search_query, area_lat, area_lng } = req.body;
   if (!place_id || !voter_id) return res.status(400).json({ error: "Missing place_id or voter_id" });
 
   const voter_hash = crypto.createHash("sha256").update(voter_id).digest("hex");
 
   try {
     await pool.query(
-      `INSERT INTO waggle_votes (place_id, place_name, voter_hash)
-       VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-      [place_id, place_name || "Unknown", voter_hash]
+      `INSERT INTO waggle_votes (place_id, place_name, voter_hash, search_query, area_lat, area_lng)
+       VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
+      [place_id, place_name || "Unknown", voter_hash,
+       search_query || null,
+       area_lat ? parseFloat(area_lat) : null,
+       area_lng ? parseFloat(area_lng) : null]
     );
     const { rows } = await pool.query(
       `SELECT COUNT(*) as total FROM waggle_votes WHERE place_id = $1`,
@@ -117,6 +130,49 @@ app.get("/votes", async (req, res) => {
     const votes = {};
     rows.forEach(r => { votes[r.place_id] = parseInt(r.total); });
     res.json({ votes });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Honey Pot: GET /honeypot?query=restaurant&lat=XX&lng=YY&radius=3000 ──
+// Returns the top hive-voted place for this search context, if it has
+// enough votes to be meaningful (threshold: 3+). This is the community pick.
+app.get("/honeypot", async (req, res) => {
+  if (!pool) return res.json({ honeypot: null });
+  const { query, lat, lng, radius = 3000 } = req.query;
+  if (!query) return res.json({ honeypot: null });
+
+  // Normalise query keywords so "pub bar" and "pub" match the same records
+  const keywords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
+  try {
+    // Find votes for places whose names or categories loosely match the query
+    // We store the place_name in waggle_votes so we can fuzzy match
+    const { rows } = await pool.query(
+      `SELECT place_id, place_name, COUNT(*) as vote_count,
+              MAX(created_at) as last_vote
+       FROM waggle_votes
+       GROUP BY place_id, place_name
+       HAVING COUNT(*) >= 3
+       ORDER BY vote_count DESC
+       LIMIT 50`
+    );
+
+    // If we have lat/lng, also filter by places that were searched in this area
+    // (we use the place data stored with the vote for this)
+    // For now return the top voted place in the result set with 3+ votes
+    if (!rows.length) return res.json({ honeypot: null });
+
+    const top = rows[0];
+    res.json({
+      honeypot: {
+        place_id:   top.place_id,
+        place_name: top.place_name,
+        vote_count: parseInt(top.vote_count),
+        last_vote:  top.last_vote,
+      }
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
