@@ -1962,7 +1962,7 @@ function renderResults(rawPlaces, query, honeypot) {
     const hoursHtml = renderHours(place);
     const descHtml  = place.description ? `<div class="result-description">📌 ${escHtml(place.description)}</div>` : "";
     const bookingBtn = (selectedQuery.includes("hotel") || document.getElementById("query-input").value.toLowerCase().includes("hotel"))
-      ? `<a class="booking-link" href="https://www.booking.com/searchresults.html?ss=${encodeURIComponent(place.name + " " + (place.vicinity||""))}&aid=${BOOKING_CID}&lang=en-gb&sb=1&src=searchresults" target="_blank" rel="noopener">🏨 Book on Booking.com</a>`
+      ? `<a class="booking-link" href="https://www.booking.com/searchresults.html?aid=${BOOKING_CID}&label=beesknees-hotel-search&ss=${encodeURIComponent(place.name + " " + (place.vicinity||""))}&lang=en-gb&sb=1" target="_blank" rel="noopener">🏨 Book on Booking.com</a>`
       : "";
     card.innerHTML = `
       <div class="medal">${MEDALS[i]}</div>
@@ -2331,6 +2331,46 @@ document.getElementById("buzz-search-pubs")?.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
   setTimeout(() => document.getElementById("search-btn").click(), 400);
 });
+
+// ── Real-time Local Buzz trigger on location input typing ────
+// Shows the panel as soon as the user types a matching city name,
+// without waiting for a full search to complete.
+(function attachLocationInputBuzzTrigger() {
+  const locInput = document.getElementById("location-input");
+  if (!locInput) return;
+
+  // Debounce to avoid running on every single keystroke
+  let buzztypeTimer = null;
+  locInput.addEventListener("input", () => {
+    clearTimeout(buzztypeTimer);
+    buzztypeTimer = setTimeout(() => {
+      const val = locInput.value.trim().toLowerCase();
+      const panel = document.getElementById("local-buzz");
+      if (!panel) return;
+
+      // Check if value matches any buzz spot name
+      const matched = BUZZ_SPOTS.some(spot =>
+        val.includes(spot.name) || spot.name.includes(val.replace(/[^a-z]/g, ""))
+      );
+
+      // Check dismiss state
+      let dismissed = false;
+      try {
+        const d = JSON.parse(localStorage.getItem(BUZZ_DISMISS_KEY) || "{}");
+        if (d.until && Date.now() < d.until) dismissed = true;
+      } catch(e) {}
+
+      if (matched && !dismissed) {
+        panel.classList.add("visible");
+      } else if (!matched) {
+        // Only hide if we don't have confirmed coords that match
+        if (!userLat || !userLng) {
+          panel.classList.remove("visible");
+        }
+      }
+    }, 300); // 300ms debounce
+  });
+})();
 
 // ── Tip Jar ───────────────────────────────────────────────────
 ["tip-coffee-btn","tip-kofi-btn"].forEach(id => {
