@@ -920,7 +920,7 @@
       position: relative;
       animation: fadeUp 0.5s ease both;
     }
-    .local-buzz.visible { display: block; }
+    .local-buzz.visible { display: block; margin-top: 1.5rem; }
 
     .buzz-img-wrap {
       position: relative;
@@ -1577,50 +1577,6 @@
   <div class="status" id="status" style="display:none"></div>
   <div class="results" id="results"></div>
 
-</div>
-
-  <!-- Share Section -->
-  <div class="share-section">
-    <div class="section-title">🐝 Spread the Word</div>
-    <div class="section-sub">Know someone who'd love The Bee's Knees? Share it!</div>
-    <div class="share-buttons">
-      <a class="share-btn share-facebook" id="share-facebook" href="#" target="_blank" rel="noopener">
-        📘 Facebook
-      </a>
-      <a class="share-btn share-twitter" id="share-twitter" href="#" target="_blank" rel="noopener">
-        𝕏 Twitter
-      </a>
-      <a class="share-btn share-whatsapp" id="share-whatsapp" href="#" target="_blank" rel="noopener">
-        💬 WhatsApp
-      </a>
-      <button class="share-btn share-copy" id="share-copy">
-        🔗 Copy Link
-      </button>
-    </div>
-  </div>
-
-  <!-- Feedback Section -->
-  <div class="feedback-section">
-    <div class="section-title">🍯 Got Feedback?</div>
-    <div class="section-sub">Help us make The Bee's Knees even better</div>
-    <button class="feedback-toggle" id="feedback-toggle">✍️ Share your thoughts</button>
-    <div class="feedback-form" id="feedback-form" style="display:none; margin-top:0.9rem;">
-      <input type="text" id="feedback-name" placeholder="Your name (optional)" />
-      <input type="email" id="feedback-email" placeholder="Your email (optional)" />
-      <textarea id="feedback-message" placeholder="Tell us what you think, what's missing, or what we could improve…"></textarea>
-      <button class="feedback-submit" id="feedback-submit">🐝 Send Feedback</button>
-    </div>
-    <div class="feedback-success" id="feedback-success">
-      ✅ Thanks for the buzz! We'll take a look. 🐝
-    </div>
-  </div>
-
-</div>
-
-
-</div>
-
-
   <!-- ── Local Buzz — geo-targeted editorial panel ── -->
   <!-- Shown only when the user's resolved location is within ~40km of Belfast city centre -->
   <!-- To test other cities: add entries to the BUZZ_SPOTS array in the JS below -->
@@ -1694,6 +1650,53 @@
       </div>
     </div>
   </div>
+
+
+
+</div>
+
+  <!-- Share Section -->
+  <div class="share-section">
+    <div class="section-title">🐝 Spread the Word</div>
+    <div class="section-sub">Know someone who'd love The Bee's Knees? Share it!</div>
+    <div class="share-buttons">
+      <a class="share-btn share-facebook" id="share-facebook" href="#" target="_blank" rel="noopener">
+        📘 Facebook
+      </a>
+      <a class="share-btn share-twitter" id="share-twitter" href="#" target="_blank" rel="noopener">
+        𝕏 Twitter
+      </a>
+      <a class="share-btn share-whatsapp" id="share-whatsapp" href="#" target="_blank" rel="noopener">
+        💬 WhatsApp
+      </a>
+      <button class="share-btn share-copy" id="share-copy">
+        🔗 Copy Link
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback Section -->
+  <div class="feedback-section">
+    <div class="section-title">🍯 Got Feedback?</div>
+    <div class="section-sub">Help us make The Bee's Knees even better</div>
+    <button class="feedback-toggle" id="feedback-toggle">✍️ Share your thoughts</button>
+    <div class="feedback-form" id="feedback-form" style="display:none; margin-top:0.9rem;">
+      <input type="text" id="feedback-name" placeholder="Your name (optional)" />
+      <input type="email" id="feedback-email" placeholder="Your email (optional)" />
+      <textarea id="feedback-message" placeholder="Tell us what you think, what's missing, or what we could improve…"></textarea>
+      <button class="feedback-submit" id="feedback-submit">🐝 Send Feedback</button>
+    </div>
+    <div class="feedback-success" id="feedback-success">
+      ✅ Thanks for the buzz! We'll take a look. 🐝
+    </div>
+  </div>
+
+</div>
+
+
+</div>
+
+
 
   <!-- Tip Jar Section -->
   <div class="tip-jar-section" id="tip-jar">
@@ -2626,13 +2629,6 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
     if (af) af.style.display = "none";
     if (as) as.style.display = "block";
   }
-});
-
-// Logout button
-document.getElementById("auth-logout").addEventListener("click", async () => {
-  if (sbClient) await sbClient.auth.signOut();
-  document.getElementById("auth-overlay").classList.remove("open");
-  updateAuthUI(null);
 });
 
 // Supabase loaded in <head> — init on DOMContentLoaded to ensure elements exist
