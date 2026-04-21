@@ -189,15 +189,15 @@
       <span id="city-saved" style="font-size:0.78rem;color:#1a7a40;margin-left:0.5rem;display:none;">✅ Saved!</span>
     </div>
 
-    <!-- Flappy Bee Game -->
+    <!-- Buzzy Bee Game -->
     <div class="card" id="game-card" style="display:none;">
-      <div class="section-title">🎮 Flappy Bee — Secret Game!</div>
+      <div class="section-title">🎮 Buzzy Bee — Secret Game!</div>
       <canvas id="game-canvas" height="280"></canvas>
       <div class="game-controls">
         <div class="game-score">Score: <span id="game-score">0</span> &nbsp;|&nbsp; Best: <span id="game-best">0</span></div>
         <button class="game-btn" id="game-restart">Restart 🐝</button>
       </div>
-      <div class="game-hint">Tap or press Space to flap · Avoid the honeycombs!</div>
+      <div class="game-hint">Tap or press Space to flap · Collect 🌸🌸🌸 to slow time · Avoid the honeycombs!</div>
     </div>
 
     <!-- Sign Out -->
@@ -376,17 +376,27 @@ async function loadProfile() {
   });
 }
 
-// ── Flappy Bee Game ───────────────────────────────────────────
+// ── Buzzy Bee Game ────────────────────────────────────────────
 let gameRunning = false, gameOver = false;
 let beeY, beeVel, score, bestScore = 0, pipes, frames, gameAnimId;
+let flowers = [];
+let flowerCount = 0;
+let slowActive  = false;
+let slowTimer   = 0;
 
-const GRAVITY   = 0.28;   // lighter gravity
-const FLAP      = -6.5;   // gentler flap
-const PIPE_W    = 48;
-const PIPE_GAP  = 165;    // bigger gap — easier!
-const PIPE_SPD  = 1.8;    // slower pipes
-const BEE_X     = 70;
-const BEE_R     = 16;
+const GRAVITY_NORMAL  = 0.28;
+const GRAVITY_SLOW    = 0.13;
+const FLAP_NORMAL     = -6.5;
+const FLAP_SLOW       = -4.2;
+const PIPE_W          = 48;
+const PIPE_GAP        = 165;
+const PIPE_SPD_NORMAL = 1.8;
+const PIPE_SPD_SLOW   = 0.8;
+const BEE_X           = 70;
+const BEE_R           = 16;
+const FLOWER_R        = 14;
+const SLOW_FRAMES     = 240;
+const FLOWERS_NEEDED  = 3;
 
 function initGame() {
   const canvas = document.getElementById("game-canvas");
@@ -397,7 +407,7 @@ function initGame() {
   function flap() {
     if (gameOver) { startGame(); return; }
     if (!gameRunning) { gameRunning = true; }
-    beeVel = FLAP;
+    beeVel = slowActive ? FLAP_SLOW : FLAP_NORMAL;
   }
 
   canvas.addEventListener("click", flap);
@@ -415,12 +425,16 @@ function startGame() {
   canvas.width  = W;
   canvas.height = 280;
 
-  beeY      = canvas.height / 2;
-  beeVel    = 0;
-  score     = 0;
-  pipes     = [];
-  frames    = 0;
-  gameOver  = false;
+  beeY        = canvas.height / 2;
+  beeVel      = 0;
+  score       = 0;
+  pipes       = [];
+  flowers     = [];
+  frames      = 0;
+  flowerCount = 0;
+  slowActive  = false;
+  slowTimer   = 0;
+  gameOver    = false;
   gameRunning = false;
 
   document.getElementById("game-score").textContent = 0;
@@ -434,12 +448,28 @@ function gameLoop(canvas) {
   const H   = canvas.height;
 
   function draw() {
-    // Sky gradient
+    const gravity = slowActive ? GRAVITY_SLOW : GRAVITY_NORMAL;
+    const pipeSpd = slowActive ? PIPE_SPD_SLOW : PIPE_SPD_NORMAL;
+
+    if (slowActive) {
+      slowTimer--;
+      if (slowTimer <= 0) { slowActive = false; }
+    }
+
+    // Sky — shifts purple during slow-mo
     const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, "#87CEEB");
-    sky.addColorStop(1, "#E0F4FF");
+    sky.addColorStop(0, slowActive ? "#1a1040" : "#87CEEB");
+    sky.addColorStop(1, slowActive ? "#2a1060" : "#E0F4FF");
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
+
+    if (slowActive) {
+      ctx.fillStyle = "rgba(140,80,255,0.12)";
+      ctx.fillRect(0, 0, W, H);
+      // Slow-mo progress bar at top
+      ctx.fillStyle = "rgba(200,140,255,0.75)";
+      ctx.fillRect(0, 0, W * (slowTimer / SLOW_FRAMES), 5);
+    }
 
     // Ground
     ctx.fillStyle = "#8B6914";
@@ -447,22 +477,25 @@ function gameLoop(canvas) {
     ctx.fillStyle = "#A0832A";
     ctx.fillRect(0, H - 24, W, 6);
 
-    // Pipes (honeycomb style)
+    // Spawn pipes and flowers
     frames++;
-    if (gameRunning && frames % 110 === 0) {  // more space between pipes
+    if (gameRunning && frames % 110 === 0) {
       const gapY = 60 + Math.random() * (H - PIPE_GAP - 100);
       pipes.push({ x: W, gapY });
+      if (Math.random() > 0.3) {
+        const fy = gapY + 20 + Math.random() * (PIPE_GAP - 40);
+        flowers.push({ x: W + 30, y: fy, collected: false });
+      }
     }
 
+    // Pipes
     for (let i = pipes.length - 1; i >= 0; i--) {
       const p = pipes[i];
-      if (gameRunning) p.x -= PIPE_SPD;
+      if (gameRunning) p.x -= pipeSpd;
 
-      // Draw comb pipes
       drawComb(ctx, p.x, 0, PIPE_W, p.gapY);
       drawComb(ctx, p.x, p.gapY + PIPE_GAP, PIPE_W, H - p.gapY - PIPE_GAP - 24);
 
-      // Score
       if (gameRunning && p.x + PIPE_W < BEE_X && !p.scored) {
         p.scored = true;
         score++;
@@ -471,7 +504,6 @@ function gameLoop(canvas) {
         document.getElementById("game-best").textContent  = bestScore;
       }
 
-      // Collision
       if (
         BEE_X + BEE_R > p.x + 4 &&
         BEE_X - BEE_R < p.x + PIPE_W - 4 &&
@@ -481,27 +513,83 @@ function gameLoop(canvas) {
       if (p.x + PIPE_W < 0) pipes.splice(i, 1);
     }
 
+    // Flowers — draw, move, collect
+    for (let i = flowers.length - 1; i >= 0; i--) {
+      const fl = flowers[i];
+      if (gameRunning) fl.x -= pipeSpd * 0.85;
+
+      if (!fl.collected) {
+        const bob = Math.sin(frames * 0.09 + i * 1.3) * 4;
+        ctx.save();
+        ctx.font = "22px serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.globalAlpha = 0.9;
+        ctx.fillText("\uD83C\uDF38", fl.x, fl.y + bob);
+        ctx.globalAlpha = 1;
+        ctx.restore();
+
+        // Pickup collision
+        const dx = fl.x - BEE_X;
+        const dy = fl.y - beeY;
+        if (gameRunning && Math.sqrt(dx*dx + dy*dy) < BEE_R + FLOWER_R) {
+          fl.collected = true;
+          flowerCount++;
+
+          // Small pop text
+          ctx.font = "bold 13px \'DM Sans\', sans-serif";
+          ctx.fillStyle = "#FF69B4";
+          ctx.textAlign = "center";
+          ctx.fillText("\uD83C\uDF38 " + flowerCount + "/" + FLOWERS_NEEDED, BEE_X + 28, beeY - 20);
+
+          if (flowerCount >= FLOWERS_NEEDED) {
+            slowActive  = true;
+            slowTimer   = SLOW_FRAMES;
+            flowerCount = 0;
+          }
+        }
+      }
+      if (fl.x < -20) flowers.splice(i, 1);
+    }
+
+    // Flower counter strip (top left)
+    if (gameRunning || gameOver) {
+      ctx.font = "18px serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      for (let f = 0; f < FLOWERS_NEEDED; f++) {
+        ctx.globalAlpha = f < flowerCount ? 1.0 : 0.28;
+        ctx.fillText("\uD83C\uDF38", 7 + f * 24, 18);
+      }
+      ctx.globalAlpha = 1;
+      if (slowActive) {
+        ctx.font = "bold 12px \'DM Sans\', sans-serif";
+        ctx.fillStyle = "#cc80ff";
+        ctx.textAlign = "left";
+        ctx.fillText("SLOW!", 7 + FLOWERS_NEEDED * 24 + 4, 18);
+      }
+    }
+
     // Physics
     if (gameRunning) {
-      beeVel += GRAVITY;
+      beeVel += gravity;
       beeY   += beeVel;
     }
 
-    // Ground/ceiling collision
     if (beeY + BEE_R >= H - 24 || beeY - BEE_R <= 0) {
       endGame(ctx, W, H); return;
     }
 
     // Draw bee
-    ctx.font = `${BEE_R * 2}px serif`;
+    ctx.font = BEE_R * 2 + "px serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const tilt = Math.max(-30, Math.min(30, beeVel * 3));
     ctx.save();
     ctx.translate(BEE_X, beeY);
     ctx.rotate(tilt * Math.PI / 180);
-    ctx.scale(-1, 1);  // flip horizontally so bee faces right
-    ctx.fillText("🐝", 0, 0);
+    ctx.scale(-1, 1);
+    ctx.fillText("\uD83D\uDC1D", 0, 0);
     ctx.restore();
 
     // Start prompt
@@ -509,18 +597,19 @@ function gameLoop(canvas) {
       ctx.fillStyle = "rgba(0,0,0,0.45)";
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "#fff";
-      ctx.font = "bold 16px 'DM Sans', sans-serif";
+      ctx.font = "bold 16px \'DM Sans\', sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("🐝 Tap to start Flappy Bee!", W/2, H/2);
-      ctx.font = "13px 'DM Sans', sans-serif";
+      ctx.fillText("\uD83D\uDC1D Tap to start Buzzy Bee!", W/2, H/2);
+      ctx.font = "13px \'DM Sans\', sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.75)";
-      ctx.fillText("Avoid the honeycombs!", W/2, H/2 + 26);
+      ctx.fillText("Collect \uD83C\uDF38\uD83C\uDF38\uD83C\uDF38 to slow time!", W/2, H/2 + 26);
     }
 
     gameAnimId = requestAnimationFrame(draw);
   }
   draw();
 }
+
 
 function drawComb(ctx, x, y, w, h) {
   if (h <= 0) return;
@@ -567,7 +656,7 @@ function endGame(ctx, W, H) {
     if (sbClient && currentUser) {
       sbClient.from("profiles")
         .upsert({ id: currentUser.id, flappy_best: bestScore }, { onConflict: "id" })
-        .then(() => console.log("🐝 Flappy best score saved:", bestScore))
+        .then(() => console.log("🐝 Buzzy Bee best score saved:", bestScore))
         .catch(e => console.warn("Score save failed:", e.message));
     }
   }
