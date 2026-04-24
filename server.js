@@ -57,9 +57,12 @@ initDB();
 app.use(cors());
 app.use(express.json());
 
-// ── Serve HTML files ──────────────────────────────────────────
+// ── Serve static files ───────────────────────────────────────
+// express.static serves ALL files in the app directory automatically:
+// ads.js, any future CSS/JS files, favicon.ico etc. No route needed per file.
 const HTML_DIR = __dirname;
-console.log(`📁 Serving HTML from: ${HTML_DIR}`);
+app.use(express.static(HTML_DIR, { index: false })); // index:false so our / route stays in control
+console.log(`📁 Serving static files from: ${HTML_DIR}`);
 console.log(`📁 Files: ${fs.readdirSync(HTML_DIR).join(", ")}`);
 
 app.get("/", (_req, res) => {
