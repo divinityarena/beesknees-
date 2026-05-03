@@ -79,10 +79,17 @@ app.post("/vote", async (req, res) => {
 
   try {
     // Upsert vote — ON CONFLICT DO NOTHING equivalent
+    const { search_query, area_lat, area_lng } = req.body;
     const { error: insertErr } = await supabase
       .from("waggle_votes")
-      .upsert({ place_id, place_name: place_name || "Unknown", voter_hash },
-               { onConflict: "place_id,voter_hash", ignoreDuplicates: true });
+      .upsert({
+        place_id,
+        place_name:   place_name || "Unknown",
+        voter_hash,
+        search_query: search_query || null,
+        area_lat:     area_lat    || null,
+        area_lng:     area_lng    || null,
+      }, { onConflict: "place_id,voter_hash", ignoreDuplicates: true });
 
     if (insertErr) throw new Error(insertErr.message);
 
