@@ -2017,8 +2017,15 @@ document.getElementById("dist-row").addEventListener("click", (e) => {
 // ── Geocode via server proxy ──────────────────────────────────
 async function geocodeLocation(text) {
   const res  = await fetch(`${API_BASE}/geocode?address=${encodeURIComponent(text)}`);
+  const ct   = res.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) {
+    throw new Error("Search is temporarily unavailable — please try again in a moment.");
+  }
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || `Couldn't find "${text}". Try your full postcode or town name.`);
+  if (!res.ok) {
+    if (res.status === 503) throw new Error("Search is temporarily unavailable — please try again in a moment.");
+    throw new Error(data.error || `Couldn't find "${text}". Try your full postcode or town name.`);
+  }
   console.log(`📍 ${text} → ${data.formatted} (${data.lat}, ${data.lng})`);
   return { lat: data.lat, lng: data.lng };
 }
@@ -2092,10 +2099,13 @@ document.getElementById("search-btn").addEventListener("click", async () => {
     const hpRes = honeypotRes.status === "fulfilled" ? honeypotRes.value : null;
 
     if (!res || !res.ok) {
-      const errData = res ? await res.json() : {};
-      throw new Error(errData.error || "Server error");
+      const ct = res ? (res.headers.get("content-type") || "") : "";
+      const errData = (res && ct.includes("application/json")) ? await res.json() : {};
+      throw new Error(errData.error || "Search is temporarily unavailable — please try again.");
     }
 
+    const ct   = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) throw new Error("Search is temporarily unavailable — please try again.");
     const data = await res.json();
     if (!data.results || !data.results.length) {
       hideOverlay();
@@ -2106,8 +2116,11 @@ document.getElementById("search-btn").addEventListener("click", async () => {
     // Parse honey pot if available
     let honeypot = null;
     if (hpRes && hpRes.ok) {
-      const hpData = await hpRes.json();
-      honeypot = hpData.honeypot || null;
+      const hpCt = hpRes.headers.get("content-type") || "";
+      if (hpCt.includes("application/json")) {
+        const hpData = await hpRes.json();
+        honeypot = hpData.honeypot || null;
+      }
     }
 
     updateOverlayStage("✨ Ranking by Hive Score™…");
@@ -2324,6 +2337,7 @@ async function loadWaggleVotes(placeIds) {
   if (!placeIds.length) return;
   try {
     const res  = await fetch(`${API_BASE}/votes?place_ids=${placeIds.join(",")}`);
+    if (!(res.headers.get("content-type") || "").includes("application/json")) return;
     const data = await res.json();
     placeIds.forEach(id => {
       updateWaggleUI(id, data.votes?.[id] || 0, voted[id]);
@@ -2358,6 +2372,8 @@ async function castWaggle(placeId, placeName, btn) {
         area_lng:     userLng,
       }),
     });
+    const vct = vres.headers.get("content-type") || "";
+    if (!vct.includes("application/json")) throw new Error("Vote failed — unexpected server response");
     const vdata = await vres.json();
     // Also save to Supabase if logged in
     if (sbClient && currentUser) {

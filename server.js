@@ -2,12 +2,12 @@
 // The Bee's Knees 🐝 — Backend Server
 // ============================================================
 
-const express       = require("express");
-const cors          = require("cors");
-const path          = require("path");
-const fs            = require("fs");
-const crypto        = require("crypto");
-const { createClient } = require("@supabase/supabase-js");
+const express  = require("express");
+const cors     = require("cors");
+const path     = require("path");
+const fs       = require("fs");
+const crypto   = require("crypto");
+const { Pool } = require("pg");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -19,29 +19,37 @@ const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
 if (!GOOGLE_API_KEY)     console.error("❌ Missing GOOGLE_API_KEY");
 if (!FOURSQUARE_API_KEY) console.error("❌ Missing FOURSQUARE_API_KEY");
 
-// ── Supabase — Waggle Votes ──────────────────────────────────
-// Uses service key (not anon key) for server-side writes — bypasses RLS.
-// Set SUPABASE_URL and SUPABASE_SERVICE_KEY in Render environment variables.
-const SUPABASE_URL         = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+// ── PostgreSQL — Waggle Votes ─────────────────────────────────
+const pool = process.env.DATABASE_URL ? new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+}) : null;
 
-const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  : null;
-
-if (supabase) {
-  console.log("🐝 Supabase client ready — waggle votes enabled");
-} else {
-  console.warn("⚠️  Missing SUPABASE_URL or SUPABASE_SERVICE_KEY — waggle votes disabled");
+async function initDB() {
+  if (!pool) return console.log("⚠️  No DATABASE_URL — waggle votes disabled");
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS waggle_votes (
+        place_id    TEXT NOT NULL,
+        place_name  TEXT NOT NULL,
+        voter_hash  TEXT NOT NULL,
+        created_at  TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (place_id, voter_hash)
+      );
+    `);
+    console.log("🐝 Waggle votes DB ready");
+  } catch (e) {
+    console.error("DB init error:", e.message);
+  }
 }
+initDB();
 
 app.use(cors());
 app.use(express.json());
 
-// ── Serve static files ───────────────────────────────────────
+// ── Serve HTML files ──────────────────────────────────────────
 const HTML_DIR = __dirname;
-app.use(express.static(HTML_DIR, { index: false }));
-console.log(`📁 Serving static files from: ${HTML_DIR}`);
+console.log(`📁 Serving HTML from: ${HTML_DIR}`);
 console.log(`📁 Files: ${fs.readdirSync(HTML_DIR).join(", ")}`);
 
 app.get("/", (_req, res) => {
@@ -71,37 +79,23 @@ app.get("/health", (_req, res) => {
 
 // ── Waggle Vote: POST /vote ───────────────────────────────────
 app.post("/vote", async (req, res) => {
-  if (!supabase) return res.status(503).json({ error: "Votes not available — no database connected" });
+  if (!pool) return res.status(503).json({ error: "Votes not available — no database connected" });
   const { place_id, place_name, voter_id } = req.body;
   if (!place_id || !voter_id) return res.status(400).json({ error: "Missing place_id or voter_id" });
 
   const voter_hash = crypto.createHash("sha256").update(voter_id).digest("hex");
 
   try {
-    // Upsert vote — ON CONFLICT DO NOTHING equivalent
-    const { search_query, area_lat, area_lng } = req.body;
-    const { error: insertErr } = await supabase
-      .from("waggle_votes")
-      .upsert({
-        place_id,
-        place_name:   place_name || "Unknown",
-        voter_hash,
-        search_query: search_query || null,
-        area_lat:     area_lat    || null,
-        area_lng:     area_lng    || null,
-      }, { onConflict: "place_id,voter_hash", ignoreDuplicates: true });
-
-    if (insertErr) throw new Error(insertErr.message);
-
-    // Count total votes for this place
-    const { count, error: countErr } = await supabase
-      .from("waggle_votes")
-      .select("*", { count: "exact", head: true })
-      .eq("place_id", place_id);
-
-    if (countErr) throw new Error(countErr.message);
-
-    res.json({ success: true, total: count || 0 });
+    await pool.query(
+      `INSERT INTO waggle_votes (place_id, place_name, voter_hash)
+       VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+      [place_id, place_name || "Unknown", voter_hash]
+    );
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) as total FROM waggle_votes WHERE place_id = $1`,
+      [place_id]
+    );
+    res.json({ success: true, total: parseInt(rows[0].total) });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -109,25 +103,19 @@ app.post("/vote", async (req, res) => {
 
 // ── Waggle Votes: GET /votes?place_ids=id1,id2 ───────────────
 app.get("/votes", async (req, res) => {
-  if (!supabase) return res.json({ votes: {} });
+  if (!pool) return res.json({ votes: {} });
   const ids = (req.query.place_ids || "").split(",").filter(Boolean);
   if (!ids.length) return res.json({ votes: {} });
 
   try {
-    const { data, error } = await supabase
-      .from("waggle_votes")
-      .select("place_id")
-      .in("place_id", ids);
-
-    if (error) throw new Error(error.message);
-
-    // Count votes per place_id in JS (Supabase free tier has no GROUP BY)
+    const { rows } = await pool.query(
+      `SELECT place_id, COUNT(*) as total
+       FROM waggle_votes WHERE place_id = ANY($1)
+       GROUP BY place_id`,
+      [ids]
+    );
     const votes = {};
-    ids.forEach(id => { votes[id] = 0; });
-    (data || []).forEach(row => {
-      votes[row.place_id] = (votes[row.place_id] || 0) + 1;
-    });
-
+    rows.forEach(r => { votes[r.place_id] = parseInt(r.total); });
     res.json({ votes });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -154,6 +142,17 @@ app.get("/geocode", async (req, res) => {
       return res.json({ lat, lng, formatted: data.results[0].formatted_address });
     }
 
+    // Log Google API status for diagnostics (visible in Render logs)
+    console.warn(`⚠️  Geocode status for "${address}": ${data.status} ${data.error_message || ""}`);
+
+    // If key is denied/invalid, return a clear error immediately
+    if (data.status === "REQUEST_DENIED" || data.status === "INVALID_REQUEST") {
+      return res.status(503).json({
+        error: "Search is temporarily unavailable. Please try again shortly.",
+        detail: data.error_message || data.status
+      });
+    }
+
     // Fallback without region bias
     const url2  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`;
     const resp2 = await fetch(url2);
@@ -162,6 +161,15 @@ app.get("/geocode", async (req, res) => {
     if (data2.status === "OK" && data2.results.length) {
       const { lat, lng } = data2.results[0].geometry.location;
       return res.json({ lat, lng, formatted: data2.results[0].formatted_address });
+    }
+
+    console.warn(`⚠️  Geocode fallback status for "${address}": ${data2.status} ${data2.error_message || ""}`);
+
+    if (data2.status === "REQUEST_DENIED" || data2.status === "INVALID_REQUEST") {
+      return res.status(503).json({
+        error: "Search is temporarily unavailable. Please try again shortly.",
+        detail: data2.error_message || data2.status
+      });
     }
 
     res.status(404).json({ error: `Could not find "${address}". Try your full postcode or town name.` });
@@ -433,20 +441,26 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 
 function toRad(deg) { return deg * Math.PI / 180; }
 
-// ── Scheduled weekly snapshot ────────────────────────────────
-async function weeklySnapshot() {
-  if (!supabase) return;
-  try {
-    const { data, error } = await supabase.from("waggle_votes").select("place_name");
-    if (error || !data) return;
-    const tally = {};
-    data.forEach(r => { tally[r.place_name] = (tally[r.place_name] || 0) + 1; });
-    const top = Object.entries(tally).sort((a, b) => b[1] - a[1]).slice(0, 10);
+// ── Scheduled weekly backup ──────────────────────────────────
+// Runs every Sunday at midnight and logs top voted places
+// Data is preserved in the DB — this just gives you a console snapshot
+function weeklySnapshot() {
+  if (!pool) return;
+  pool.query(`
+    SELECT place_name, COUNT(*) as votes
+    FROM waggle_votes
+    GROUP BY place_name
+    ORDER BY votes DESC
+    LIMIT 10
+  `).then(({ rows }) => {
     console.log("\n🐝 Weekly Hive Snapshot — Top Voted Places:");
-    top.forEach(([name, votes], i) => console.log(`  ${i+1}. ${name} — ${votes} waggle votes`));
-    console.log(`  Snapshot: ${new Date().toISOString()}\n`);
-  } catch (e) { console.warn("Snapshot failed:", e.message); }
+    rows.forEach((r, i) => console.log(`  ${i+1}. ${r.place_name} — ${r.votes} votes`));
+    console.log(`  Total snapshot time: ${new Date().toISOString()}
+`);
+  }).catch(e => console.warn("Snapshot failed:", e.message));
 }
+
+// Run snapshot every 7 days
 setInterval(weeklySnapshot, 7 * 24 * 60 * 60 * 1000);
 
 // ── Keep-alive ping ──────────────────────────────────────────
