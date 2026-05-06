@@ -2,11 +2,11 @@
 // The Bee's Knees 🐝 — Backend Server
 // ============================================================
 
-const express          = require("express");
-const cors             = require("cors");
-const path             = require("path");
-const fs               = require("fs");
-const crypto           = require("crypto");
+const express  = require("express");
+const cors     = require("cors");
+const path     = require("path");
+const fs       = require("fs");
+const crypto   = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 
 const app  = express();
@@ -34,7 +34,7 @@ if (supabase) {
 app.use(cors());
 app.use(express.json());
 
-// ── Serve static files (ads.js, html, etc.) ──────────────────
+// ── Serve static files ───────────────────────────────────────
 const HTML_DIR = __dirname;
 app.use(express.static(HTML_DIR, { index: false }));
 console.log(`📁 Serving static files from: ${HTML_DIR}`);
@@ -112,7 +112,6 @@ app.get("/votes", async (req, res) => {
       .in("place_id", ids);
 
     if (error) throw new Error(error.message);
-
     const votes = {};
     ids.forEach(id => { votes[id] = 0; });
     (data || []).forEach(row => { votes[row.place_id] = (votes[row.place_id] || 0) + 1; });
@@ -143,7 +142,6 @@ app.get("/geocode", async (req, res) => {
     }
 
     console.warn(`⚠️  Geocode status for "${address}": ${data.status} — ${data.error_message || ""}`);
-
     if (data.status === "REQUEST_DENIED" || data.status === "INVALID_REQUEST") {
       return res.status(503).json({ error: "Search is temporarily unavailable — please try again in a moment." });
     }
@@ -156,12 +154,6 @@ app.get("/geocode", async (req, res) => {
     if (data2.status === "OK" && data2.results.length) {
       const { lat, lng } = data2.results[0].geometry.location;
       return res.json({ lat, lng, formatted: data2.results[0].formatted_address });
-    }
-
-    console.warn(`⚠️  Geocode fallback status for "${address}": ${data2.status} — ${data2.error_message || ""}`);
-
-    if (data2.status === "REQUEST_DENIED" || data2.status === "INVALID_REQUEST") {
-      return res.status(503).json({ error: "Search is temporarily unavailable — please try again in a moment." });
     }
 
     res.status(404).json({ error: `Could not find "${address}". Try your full postcode or town name.` });
@@ -199,7 +191,11 @@ app.get("/google-places", async (req, res) => {
     }
 
     const merged   = mergePlaces(google, fsq);
-    const ranked   = rankAndLimit(merged, lat, lng);
+
+    // Fetch waggle vote counts for all merged places before ranking
+    // so community votes can influence the final Hive Score
+    const voteMap  = await fetchVoteCounts(merged.map(p => p.place_id).filter(Boolean));
+    const ranked   = rankAndLimit(merged, lat, lng, voteMap);
 
     // Fetch opening hours for top results in parallel
     const withHours = await Promise.all(
@@ -359,7 +355,9 @@ function normaliseName(name) {
 // rating^3.0  — quality gaps are amplified (4.5★ meaningfully beats 4.4★)
 // cap at 500  — review count plateaus sooner, hidden gems surface faster
 // confidence  — penalises very low review counts
-// waggle boost — up to +5 points from user votes
+// dual source — 5% bonus if place appears in both Google + Foursquare
+// waggle boost — up to +30 points (30% of score) from community votes
+//   1 vote = +3pts, 5 votes = +15pts, 10+ votes = max +30pts
 const HIVE_SCORE_MAX = Math.pow(5.0, 3.0)
   * Math.log10(510)
   * (1 - (1 / Math.log10(510)))
@@ -375,23 +373,52 @@ function hiveScore(rating, reviews, dualSource, waggleVotes = 0) {
                    * confidence(reviews);
   const bonus      = dualSource ? 1.05 : 1.0;
   const score      = (base * bonus / HIVE_SCORE_MAX) * 100;
-  const wagglePts  = Math.min(waggleVotes / 10, 5);
+  // Waggle votes: each vote = +3pts, capped at +30 (30% of total score)
+  const wagglePts  = Math.min(waggleVotes * 3, 30);
   return Math.min(Math.round((score + wagglePts) * 10) / 10, 100);
 }
 
+// ── Fetch vote counts for a list of place_ids ────────────────
+async function fetchVoteCounts(placeIds) {
+  const voteMap = {};
+  if (!supabase || !placeIds.length) return voteMap;
+  try {
+    const { data, error } = await supabase
+      .from("waggle_votes")
+      .select("place_id")
+      .in("place_id", placeIds);
+    if (error) throw new Error(error.message);
+    (data || []).forEach(row => {
+      voteMap[row.place_id] = (voteMap[row.place_id] || 0) + 1;
+    });
+    const total = Object.values(voteMap).reduce((a, b) => a + b, 0);
+    if (total > 0) console.log(`🗳️  Vote counts fetched: ${total} votes across ${Object.keys(voteMap).length} places`);
+  } catch (e) {
+    console.warn("Vote fetch failed (non-critical):", e.message);
+  }
+  return voteMap;
+}
+
 // ── Rank and return top 5 ─────────────────────────────────────
-function rankAndLimit(places, userLat, userLng) {
+function rankAndLimit(places, userLat, userLng, voteMap = {}) {
   const scored = places
     .filter(p => p.rating !== null && p.rating > 0 && p.lat && p.lng)
-    .map(p => ({
-      ...p,
-      maps_url:    p.maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((p.name || "") + " " + (p.vicinity || ""))}`,
-      distance_km: haversineKm(userLat, userLng, p.lat, p.lng),
-      hive_score:  hiveScore(p.rating, p.review_count || 0, p.sources?.length > 1),
-    }))
+    .map(p => {
+      const waggleVotes = voteMap[p.place_id] || 0;
+      return {
+        ...p,
+        waggle_votes: waggleVotes,
+        maps_url:     p.maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((p.name || "") + " " + (p.vicinity || ""))}`,
+        distance_km:  haversineKm(userLat, userLng, p.lat, p.lng),
+        hive_score:   hiveScore(p.rating, p.review_count || 0, p.sources?.length > 1, waggleVotes),
+      };
+    })
     .sort((a, b) => b.hive_score - a.hive_score);
 
   console.log(`🐝 Ranked ${scored.length} places → returning top ${Math.min(scored.length, 5)}`);
+  scored.slice(0, 5).forEach(p => {
+    if (p.waggle_votes > 0) console.log(`  🐝 ${p.name}: ${p.waggle_votes} waggle votes (+${Math.min(p.waggle_votes * 3, 30)}pts)`);
+  });
   return scored.slice(0, 5);
 }
 
