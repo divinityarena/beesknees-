@@ -2,12 +2,13 @@
 // The Bee's Knees 🐝 — Backend Server
 // ============================================================
 
-const express  = require("express");
-const cors     = require("cors");
-const path     = require("path");
-const fs       = require("fs");
-const crypto   = require("crypto");
+const express          = require("express");
+const cors             = require("cors");
+const path             = require("path");
+const fs               = require("fs");
+const crypto           = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
+const rateLimit        = require("express-rate-limit");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -31,10 +32,46 @@ if (supabase) {
   console.warn("⚠️  Missing SUPABASE_URL or SUPABASE_SERVICE_KEY — votes disabled");
 }
 
-app.use(cors());
-app.use(express.json());
+// ── In-memory search cache (30 min TTL, max 500 entries) ──────
+const searchCache  = new Map();
+const CACHE_TTL_MS = 30 * 60 * 1000;
+function getCacheKey(lat, lng, query, radius) {
+  return (+(+lat).toFixed(3)) + ":" + (+(+lng).toFixed(3)) + ":" + query.toLowerCase().trim() + ":" + radius;
+}
+function getCache(key) {
+  const e = searchCache.get(key);
+  if (!e) return null;
+  if (Date.now() - e.ts > CACHE_TTL_MS) { searchCache.delete(key); return null; }
+  return e.data;
+}
+function setCache(key, data) {
+  if (searchCache.size >= 500) {
+    const oldest = [...searchCache.entries()].sort((a,b) => a[1].ts - b[1].ts)[0][0];
+    searchCache.delete(oldest);
+  }
+  searchCache.set(key, { data, ts: Date.now() });
+}
 
-// ── Serve static files ───────────────────────────────────────
+// ── CORS, body limit, rate limiters ──────────────────────────
+const allowedOrigins = [
+  "https://beesknees.best",
+  "https://www.beesknees.best",
+  "https://beesknees.onrender.com",
+  "http://localhost:3000",
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error("Not allowed by CORS"));
+  },
+}));
+app.use(express.json({ limit: "50kb" }));
+
+const searchLimiter  = rateLimit({ windowMs: 60000, max: 30,  message: { error: "Too many searches — please wait a moment." } });
+const voteLimiter    = rateLimit({ windowMs: 60000, max: 20,  message: { error: "Too many votes — please slow down." } });
+const geocodeLimiter = rateLimit({ windowMs: 60000, max: 60,  message: { error: "Too many location requests — please wait." } });
+
+// ── Serve static files (ads.js, etc.) ────────────────────────
 const HTML_DIR = __dirname;
 app.use(express.static(HTML_DIR, { index: false }));
 console.log(`📁 Serving static files from: ${HTML_DIR}`);
@@ -66,23 +103,23 @@ app.get("/health", (_req, res) => {
 });
 
 // ── Waggle Vote: POST /vote ───────────────────────────────────
-app.post("/vote", async (req, res) => {
+app.post("/vote", voteLimiter, async (req, res) => {
   if (!supabase) return res.status(503).json({ error: "Votes not available — database not connected" });
   const { place_id, place_name, voter_id, search_query, area_lat, area_lng } = req.body;
   if (!place_id || !voter_id) return res.status(400).json({ error: "Missing place_id or voter_id" });
 
-  const voter_hash = crypto.createHash("sha256").update(voter_id).digest("hex");
+  const voter_hash = crypto.createHash("sha256").update(String(voter_id)).digest("hex");
 
   try {
     const { error: insertErr } = await supabase
       .from("waggle_votes")
       .upsert({
-        place_id,
-        place_name:   place_name   || "Unknown",
+        place_id:     String(place_id).slice(0, 200),
+        place_name:   String(place_name || "Unknown").slice(0, 200),
         voter_hash,
-        search_query: search_query || null,
-        area_lat:     area_lat     || null,
-        area_lng:     area_lng     || null,
+        search_query: search_query ? String(search_query).slice(0, 100) : null,
+        area_lat:     area_lat ? +area_lat : null,
+        area_lng:     area_lng ? +area_lng : null,
       }, { onConflict: "place_id,voter_hash", ignoreDuplicates: true });
 
     if (insertErr) throw new Error(insertErr.message);
@@ -95,14 +132,14 @@ app.post("/vote", async (req, res) => {
     if (countErr) throw new Error(countErr.message);
     res.json({ success: true, total: count || 0 });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: "Vote failed — please try again." });
   }
 });
 
 // ── Waggle Votes: GET /votes?place_ids=id1,id2 ───────────────
 app.get("/votes", async (req, res) => {
   if (!supabase) return res.json({ votes: {} });
-  const ids = (req.query.place_ids || "").split(",").filter(Boolean);
+  const ids = (req.query.place_ids || "").split(",").filter(Boolean).slice(0, 20);
   if (!ids.length) return res.json({ votes: {} });
 
   try {
@@ -117,7 +154,7 @@ app.get("/votes", async (req, res) => {
     (data || []).forEach(row => { votes[row.place_id] = (votes[row.place_id] || 0) + 1; });
     res.json({ votes });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: "Could not fetch votes." });
   }
 });
 
@@ -141,7 +178,7 @@ app.get("/geocode", async (req, res) => {
       return res.json({ lat, lng, formatted: data.results[0].formatted_address });
     }
 
-    console.warn(`⚠️  Geocode status for "${address}": ${data.status} — ${data.error_message || ""}`);
+    console.warn(`Geocode status for "${address}": ${data.status} ${data.error_message || ""}`);
     if (data.status === "REQUEST_DENIED" || data.status === "INVALID_REQUEST") {
       return res.status(503).json({ error: "Search is temporarily unavailable — please try again in a moment." });
     }
@@ -191,9 +228,6 @@ app.get("/google-places", async (req, res) => {
     }
 
     const merged   = mergePlaces(google, fsq);
-
-    // Fetch waggle vote counts for all merged places before ranking
-    // so community votes can influence the final Hive Score
     const voteMap  = await fetchVoteCounts(merged.map(p => p.place_id).filter(Boolean));
     const ranked   = rankAndLimit(merged, lat, lng, voteMap);
 
@@ -208,15 +242,24 @@ app.get("/google-places", async (req, res) => {
       })
     );
 
-    res.json({ results: withHours, sources: { google: google.length, foursquare: fsq.length } });
+    const responseData = { results: withHours, sources: { google: google.length, foursquare: fsq.length } };
+    setCache(cacheKey, responseData);
+    res.json(responseData);
 
   } catch (err) {
-    console.error("Error:", err.message);
-    res.status(500).json({ error: "Failed to fetch places. " + err.message });
+    console.error("Search error:", err.message);
+    res.status(500).json({ error: "Failed to fetch places. Please try again." });
   }
 });
 
 // ── Google Places Nearby Search ───────────────────────────────
+const FETCH_TIMEOUT_MS = 8000;
+function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 async function fetchGooglePlaces({ lat, lng, query, radius }) {
   const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
   url.searchParams.set("location", `${lat},${lng}`);
@@ -224,7 +267,7 @@ async function fetchGooglePlaces({ lat, lng, query, radius }) {
   url.searchParams.set("keyword",  query);
   url.searchParams.set("key",      GOOGLE_API_KEY);
 
-  const res  = await fetch(url.toString());
+  const res  = await fetchWithTimeout(url.toString());
   const data = await res.json();
 
   if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
@@ -255,7 +298,7 @@ async function fetchFoursquarePlaces({ lat, lng, query, radius }) {
   url.searchParams.set("limit",  "50");
   url.searchParams.set("fields", "fsq_id,name,geocodes,rating,stats,location,categories,price");
 
-  const res  = await fetch(url.toString(), {
+  const res  = await fetchWithTimeout(url.toString(), {
     headers: { Authorization: FOURSQUARE_API_KEY, Accept: "application/json" },
   });
   const data = await res.json();
@@ -355,9 +398,7 @@ function normaliseName(name) {
 // rating^3.0  — quality gaps are amplified (4.5★ meaningfully beats 4.4★)
 // cap at 500  — review count plateaus sooner, hidden gems surface faster
 // confidence  — penalises very low review counts
-// dual source — 5% bonus if place appears in both Google + Foursquare
-// waggle boost — up to +30 points (30% of score) from community votes
-//   1 vote = +3pts, 5 votes = +15pts, 10+ votes = max +30pts
+// waggle boost — up to +5 points from user votes
 const HIVE_SCORE_MAX = Math.pow(5.0, 3.0)
   * Math.log10(510)
   * (1 - (1 / Math.log10(510)))
@@ -373,29 +414,22 @@ function hiveScore(rating, reviews, dualSource, waggleVotes = 0) {
                    * confidence(reviews);
   const bonus      = dualSource ? 1.05 : 1.0;
   const score      = (base * bonus / HIVE_SCORE_MAX) * 100;
-  // Waggle votes: each vote = +3pts, capped at +30 (30% of total score)
-  const wagglePts  = Math.min(waggleVotes * 3, 30);
+  const wagglePts  = Math.min(waggleVotes * 3, 30); // each vote +3pts, max +30 (30%)
   return Math.min(Math.round((score + wagglePts) * 10) / 10, 100);
 }
 
-// ── Fetch vote counts for a list of place_ids ────────────────
+// ── Fetch vote counts for all place_ids before ranking ────────
 async function fetchVoteCounts(placeIds) {
   const voteMap = {};
   if (!supabase || !placeIds.length) return voteMap;
   try {
     const { data, error } = await supabase
-      .from("waggle_votes")
-      .select("place_id")
-      .in("place_id", placeIds);
+      .from("waggle_votes").select("place_id").in("place_id", placeIds);
     if (error) throw new Error(error.message);
-    (data || []).forEach(row => {
-      voteMap[row.place_id] = (voteMap[row.place_id] || 0) + 1;
-    });
+    (data || []).forEach(row => { voteMap[row.place_id] = (voteMap[row.place_id] || 0) + 1; });
     const total = Object.values(voteMap).reduce((a, b) => a + b, 0);
-    if (total > 0) console.log(`🗳️  Vote counts fetched: ${total} votes across ${Object.keys(voteMap).length} places`);
-  } catch (e) {
-    console.warn("Vote fetch failed (non-critical):", e.message);
-  }
+    if (total > 0) console.log(`🗳️  ${total} community votes applied to ranking`);
+  } catch (e) { console.warn("fetchVoteCounts (non-critical):", e.message); }
   return voteMap;
 }
 
@@ -416,9 +450,6 @@ function rankAndLimit(places, userLat, userLng, voteMap = {}) {
     .sort((a, b) => b.hive_score - a.hive_score);
 
   console.log(`🐝 Ranked ${scored.length} places → returning top ${Math.min(scored.length, 5)}`);
-  scored.slice(0, 5).forEach(p => {
-    if (p.waggle_votes > 0) console.log(`  🐝 ${p.name}: ${p.waggle_votes} waggle votes (+${Math.min(p.waggle_votes * 3, 30)}pts)`);
-  });
   return scored.slice(0, 5);
 }
 
@@ -429,7 +460,7 @@ async function fetchOpeningHours(placeId) {
   url.searchParams.set("fields",   "opening_hours,business_status");
   url.searchParams.set("key",      GOOGLE_API_KEY);
 
-  const res  = await fetch(url.toString());
+  const res  = await fetchWithTimeout(url.toString());
   const data = await res.json();
   if (data.status !== "OK") return {};
 
