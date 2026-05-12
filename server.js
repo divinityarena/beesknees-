@@ -243,6 +243,8 @@ app.get("/google-places", searchLimiter, async (req, res) => {
   }
 
   try {
+    console.log(`🔍 Searching: "${safeQuery}" @ ${(+lat).toFixed(3)},${(+lng).toFixed(3)} r=${radius}`);
+
     const [googleResult, fsqResult] = await Promise.allSettled([
       fetchGooglePlaces({ lat, lng, query: safeQuery, radius }),
       fetchFoursquarePlaces({ lat, lng, query: safeQuery, radius }),
@@ -251,8 +253,8 @@ app.get("/google-places", searchLimiter, async (req, res) => {
     const google = googleResult.status === "fulfilled" ? googleResult.value : [];
     const fsq    = fsqResult.status    === "fulfilled" ? fsqResult.value    : [];
 
-    if (googleResult.status === "rejected") console.warn("Google failed:", googleResult.reason.message);
-    if (fsqResult.status    === "rejected") console.warn("FSQ failed:",    fsqResult.reason.message);
+    if (googleResult.status === "rejected") console.warn("⚠️  Google failed:", googleResult.reason.message);
+    if (fsqResult.status    === "rejected") console.warn("⚠️  FSQ failed:",    fsqResult.reason.message);
 
     console.log(`📊 Google: ${google.length} · Foursquare: ${fsq.length}`);
 
@@ -260,31 +262,38 @@ app.get("/google-places", searchLimiter, async (req, res) => {
       return res.json({ results: [], sources: { google: 0, foursquare: 0 } });
     }
 
-    const merged   = mergePlaces(google, fsq);
-    const voteMap  = await fetchVoteCounts(merged.map(p => p.place_id).filter(Boolean));
-    const ranked   = rankAndLimit(merged, lat, lng, voteMap);
+    console.log("🔀 Merging results...");
+    const merged  = mergePlaces(google, fsq);
 
-    // Fetch opening hours for top results in parallel
+    console.log(`🗳️  Fetching vote counts for ${merged.length} places...`);
+    const voteMap = await fetchVoteCounts(merged.map(p => p.place_id).filter(Boolean));
+
+    console.log("🏆 Ranking...");
+    const ranked  = rankAndLimit(merged, lat, lng, voteMap);
+
+    console.log("⏰ Fetching opening hours...");
     const withHours = await Promise.all(
       ranked.map(async (place) => {
         if (!place.place_id || place.source === "foursquare") return place;
         try {
           const hours = await fetchOpeningHours(place.place_id);
           return { ...place, ...hours };
-        } catch { return place; }
+        } catch (e) {
+          console.warn(`  Hours fetch failed for ${place.name}:`, e.message);
+          return place;
+        }
       })
     );
 
     const responseData = { results: withHours, sources: { google: google.length, foursquare: fsq.length } };
-
-    // ── Cache the result for 30 minutes ──
     setCache(cacheKey, responseData);
-    console.log(`💾 Cached: ${safeQuery} @ ${(+lat).toFixed(2)},${(+lng).toFixed(2)} (${searchCache.size} entries)`);
+    console.log(`✅ Done — returning ${withHours.length} results (cached, size: ${searchCache.size})`);
 
     res.json(responseData);
 
   } catch (err) {
-    console.error("Search error:", err.message);
+    console.error("❌ Search handler threw:", err.message);
+    console.error(err.stack);
     res.status(500).json({ error: "Failed to fetch places. Please try again." });
   }
 });
