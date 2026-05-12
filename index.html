@@ -2153,8 +2153,14 @@ document.getElementById("search-btn").addEventListener("click", async () => {
 
   } catch (err) {
     hideOverlay();
-    showError("Couldn't reach the hive server. Make sure it's running. 🐝");
-    console.error(err);
+    console.error("Search failed:", err.name, err.message);
+    if (err.name === "TypeError" || err.message.toLowerCase().includes("fetch")) {
+      showError("Can't reach the server — check your connection and try again. 🐝");
+    } else if (err.message.includes("Too many")) {
+      showError("Too many searches — please wait a moment. 🍯");
+    } else {
+      showError(err.message || "Something went wrong — please try again. 🐝");
+    }
   } finally {
     searchBtn.disabled = false;
   }

@@ -53,15 +53,26 @@ function setCache(key, data) {
 }
 
 // ── CORS, body limit, rate limiters ──────────────────────────
+// CORS — allow your domains plus any Render preview URLs
+// origin is undefined for same-origin requests and server-to-server calls
 const allowedOrigins = [
   "https://beesknees.best",
   "https://www.beesknees.best",
+  "http://beesknees.best",
+  "http://www.beesknees.best",
   "https://beesknees.onrender.com",
   "http://localhost:3000",
+  "http://localhost:8080",
 ];
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // Allow requests with no origin (server-side, curl, health checks)
+    if (!origin) return cb(null, true);
+    // Allow any *.onrender.com URL (preview deployments)
+    if (origin.endsWith(".onrender.com")) return cb(null, true);
+    // Allow listed origins
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    console.warn(`CORS blocked origin: ${origin}`);
     cb(new Error("Not allowed by CORS"));
   },
 }));
@@ -161,9 +172,17 @@ app.get("/votes", async (req, res) => {
 // ── Geocode endpoint ─────────────────────────────────────────
 // GET /geocode?address=Belfast
 // Proxies Google Geocoding API server-side so referrer restrictions don't block it
-app.get("/geocode", async (req, res) => {
+app.get("/geocode", geocodeLimiter, async (req, res) => {
   const { address } = req.query;
   if (!address) return res.status(400).json({ error: "Missing address param" });
+
+  // Cache geocode results — addresses don't move, saves 1-2 API calls per lookup
+  const geoKey    = "geo:" + address.toLowerCase().trim();
+  const geoCached = getCache(geoKey);
+  if (geoCached) {
+    console.log(`⚡ Geocode cache hit: ${address}`);
+    return res.json(geoCached);
+  }
 
   const isEircode = /^[A-Z]\d{2}\s*[A-Z0-9]{4}$/i.test(address.trim());
   const region    = isEircode ? "ie" : "gb";
@@ -175,7 +194,9 @@ app.get("/geocode", async (req, res) => {
 
     if (data.status === "OK" && data.results.length) {
       const { lat, lng } = data.results[0].geometry.location;
-      return res.json({ lat, lng, formatted: data.results[0].formatted_address });
+      const geoResult    = { lat, lng, formatted: data.results[0].formatted_address };
+      setCache(geoKey, geoResult);
+      return res.json(geoResult);
     }
 
     console.warn(`Geocode status for "${address}": ${data.status} ${data.error_message || ""}`);
@@ -202,17 +223,29 @@ app.get("/geocode", async (req, res) => {
 
 // ── Main Search Endpoint ──────────────────────────────────────
 // GET /google-places?lat=XX&lng=YY&query=pizza&radius=3000
-app.get("/google-places", async (req, res) => {
+app.get("/google-places", searchLimiter, async (req, res) => {
   const { lat, lng, query, radius = 3000 } = req.query;
 
   if (!lat || !lng || !query) {
     return res.status(400).json({ error: "Missing required params: lat, lng, query" });
   }
 
+  // Sanitise query input
+  const safeQuery = String(query).slice(0, 100).trim();
+  if (!safeQuery) return res.status(400).json({ error: "Invalid query" });
+
+  // ── Cache check — return instantly if we have a recent result ──
+  const cacheKey = getCacheKey(lat, lng, safeQuery, radius);
+  const cached   = getCache(cacheKey);
+  if (cached) {
+    console.log(`⚡ Cache hit: ${safeQuery} @ ${(+lat).toFixed(2)},${(+lng).toFixed(2)}`);
+    return res.json({ ...cached, cached: true });
+  }
+
   try {
     const [googleResult, fsqResult] = await Promise.allSettled([
-      fetchGooglePlaces({ lat, lng, query, radius }),
-      fetchFoursquarePlaces({ lat, lng, query, radius }),
+      fetchGooglePlaces({ lat, lng, query: safeQuery, radius }),
+      fetchFoursquarePlaces({ lat, lng, query: safeQuery, radius }),
     ]);
 
     const google = googleResult.status === "fulfilled" ? googleResult.value : [];
@@ -243,7 +276,11 @@ app.get("/google-places", async (req, res) => {
     );
 
     const responseData = { results: withHours, sources: { google: google.length, foursquare: fsq.length } };
+
+    // ── Cache the result for 30 minutes ──
     setCache(cacheKey, responseData);
+    console.log(`💾 Cached: ${safeQuery} @ ${(+lat).toFixed(2)},${(+lng).toFixed(2)} (${searchCache.size} entries)`);
+
     res.json(responseData);
 
   } catch (err) {
