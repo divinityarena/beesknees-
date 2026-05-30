@@ -281,7 +281,7 @@
     .pill-group-label.near  { color: #5A8A6A; }
     .pill-group-label.move  { color: #4A6FA5; }
 
-    /* ── Mode toggle ── */
+    /* ── Mode Toggle ─────────────────────────────────────── */
     .mode-toggle {
       display: flex;
       background: var(--comb-dark);
@@ -310,39 +310,22 @@
       white-space: nowrap;
     }
     .mode-btn:hover { color: var(--dark); background: rgba(255,255,255,0.5); }
-    .mode-btn.active {
-      background: white;
-      color: var(--dark);
-      box-shadow: 0 1px 6px rgba(90,50,0,0.15);
-    }
+    .mode-btn.active { background: white; color: var(--dark); box-shadow: 0 1px 6px rgba(90,50,0,0.15); }
     .mode-btn.active.explore { color: var(--deep-honey); }
     .mode-btn.active.move    { color: #2E5FA3; }
 
-    /* Move mode pills */
-    .pill.move-pill {
-      border-color: #B8CCE8;
-      color: #2C4A7A;
-    }
-    .pill.move-pill:hover {
-      background: #EEF4FB;
-      border-color: #4A6FA5;
-      color: #1A3560;
-    }
-    .pill.move-pill.active {
-      background: linear-gradient(145deg, #4A6FA5, #2C4A7A);
-      border-color: #2C4A7A;
-      color: white;
-    }
-    .pill-group-label.move::after {
-      background: #B8CCE8;
-    }
+    /* ── Move mode pills ─────────────────────────────────── */
+    .pill.move-pill { border-color: #B8CCE8; color: #2C4A7A; }
+    .pill.move-pill:hover { background: #EEF4FB; border-color: #4A6FA5; color: #1A3560; }
+    .pill.move-pill.active { background: linear-gradient(145deg,#4A6FA5,#2C4A7A); border-color: #2C4A7A; color: white; }
+    .pill-group-label.move::after { background: #B8CCE8; }
 
-    /* Mode sections — shown/hidden by JS */
+    /* ── Mode sections ───────────────────────────────────── */
     .explore-section { display: block; }
     .move-section    { display: none;  }
     .app[data-mode="move"] .explore-section { display: none; }
     .app[data-mode="move"] .move-section    { display: block; }
-    .app[data-mode="move"] #search-btn:not(.finding-nearest) {
+    .app[data-mode="move"] #search-btn {
       background: linear-gradient(135deg, #4A6FA5 0%, #2C4A7A 100%);
     }
 
@@ -1164,7 +1147,8 @@
 <div class="app">
 
   <nav style="display:flex; justify-content:flex-end; gap:0.5rem; margin-bottom:0.75rem; align-items:center;">
-    <button class="auth-btn" id="auth-btn">🐝 Sign In</button>
+    <button class="auth-btn" id="auth-btn">🐝 Register / Sign In</button>
+    <a href="/about#advertise" class="nav-pill">📣 Advertise</a>
     <a href="/about" class="nav-pill">🐝 Hive Info</a>
   </nav>
 
@@ -1234,7 +1218,9 @@
 
     <!-- ── Explore Mode ── -->
     <div class="explore-section">
-      <div class="pill-group-label best">🏆 Find the Best</div>
+
+    <!-- Best Of -->
+    <div class="pill-group-label best">🏆 Find the Best</div>
     <div class="pill-grid" id="pill-grid">
       <button class="pill" data-query="restaurant dining">
         <span class="icon">🍽️</span>Restaurant
@@ -1284,14 +1270,13 @@
         <span class="icon">🚉</span>Transit
       </button>
     </div>
-    </div><!-- end explore-section -->
+    </div><!-- /explore-section -->
 
-    <!-- ── Move Mode ── -->
+    <!-- ── HomeMover Mode ── -->
     <div class="move-section">
-
       <div style="background:linear-gradient(135deg,#EEF4FB,#E0ECF8);border:1px solid #B8CCE8;border-radius:16px;padding:1rem 1.1rem;margin-bottom:1rem;">
         <p style="font-size:0.82rem;color:#2C4A7A;line-height:1.6;margin:0;">
-          <strong>Moving soon?</strong> Search for trusted local services in your new area — from solicitors and removal companies to GPs, schools and broadband deals. 🏡
+          <strong>Moving soon?</strong> Search for trusted local services in your new area — from solicitors and removal companies to GPs, schools and broadband. 🏡
         </p>
       </div>
 
@@ -1351,8 +1336,7 @@
           <span class="icon">🛡️</span>Insurance
         </button>
       </div>
-
-    </div><!-- end move-section -->
+    </div><!-- /move-section -->
 
     <div class="divider">🍯 search radius</div>
 
@@ -1414,13 +1398,17 @@
 
 <footer>
   <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
-  <div class="footer-nav" style="margin: 0.4rem 0;">
-    <a href="/about" style="font-size:0.78rem; font-weight:600; color:var(--deep-honey); text-decoration:none; opacity:0.8; transition:opacity 0.15s;"
+  <div class="footer-nav" style="margin:0.4rem 0;display:flex;justify-content:center;gap:1.25rem;flex-wrap:wrap;">
+    <a href="/about" style="font-size:0.78rem;font-weight:600;color:var(--deep-honey);text-decoration:none;opacity:0.8;transition:opacity 0.15s;"
        onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
       About Us &amp; Mission
     </a>
+    <a href="/about#advertise" style="font-size:0.78rem;font-weight:600;color:var(--deep-honey);text-decoration:none;opacity:0.8;transition:opacity 0.15s;"
+       onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
+      📣 Advertise with Us
+    </a>
   </div>
-  <div class="footer-copy">&copy; 2025 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
+  <div class="footer-copy">&copy; 2026 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
 </footer>
 
 <script>
@@ -1477,34 +1465,29 @@ document.getElementById("gps-btn").addEventListener("click", () => {
 });
 
 // ── Mode toggle ───────────────────────────────────────────────
-const appEl = document.querySelector(".app");
 let currentMode = "explore";
+const appEl = document.querySelector(".app");
 
 document.getElementById("mode-toggle").addEventListener("click", (e) => {
   const btn = e.target.closest(".mode-btn");
   if (!btn) return;
   const mode = btn.dataset.mode;
   if (mode === currentMode) return;
-
   currentMode = mode;
   document.querySelectorAll(".mode-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.mode === mode);
     b.setAttribute("aria-selected", b.dataset.mode === mode);
   });
   appEl.setAttribute("data-mode", mode);
-
-  // Clear any active pills and selections when switching modes
   document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
   selectedQuery = "";
   document.getElementById("query-input").value = "";
   document.getElementById("query-input").placeholder = mode === "move"
-    ? "e.g. Solicitor, Removal Company, Storage…"
+    ? "e.g. Solicitor, Removal Company, GP…"
     : "e.g. Pizza, Chinese, Indian, Coffee…";
   document.getElementById("search-btn").innerHTML = mode === "move"
     ? "🏠 Find for My Move"
     : "🐝 Scout the Hive";
-
-  // Animate the switch
   appEl.style.transition = "opacity 0.15s";
   appEl.style.opacity = "0.7";
   setTimeout(() => { appEl.style.opacity = "1"; }, 150);
@@ -1513,11 +1496,17 @@ document.getElementById("mode-toggle").addEventListener("click", (e) => {
 // ── Category pills ────────────────────────────────────────────
 document.addEventListener("click", (e) => {
   const pill = e.target.closest(".pill");
-  if (!pill) return;
+  if (!pill || !pill.closest(".pill-grid, [id^=pill-grid]")) return;
 
-  // Handle affiliate pills (Switch & Save section) differently
+  // Affiliate pills — open comparison site
   if (pill.dataset.affiliate) {
-    handleAffiliatePill(pill.dataset.affiliate);
+    const urls = {
+      broadband: "https://www.uswitch.com/broadband/",
+      energy:    "https://www.uswitch.com/gas-electricity/",
+      insurance: "https://www.comparethemarket.com/home-insurance/",
+    };
+    const url = urls[pill.dataset.affiliate];
+    if (url) window.open(url, "_blank", "noopener");
     return;
   }
 
@@ -1530,25 +1519,12 @@ document.addEventListener("click", (e) => {
     pill.textContent.trim().replace(/^\S+\s*/, "");
 
   const isConvenience = pill.classList.contains("convenience");
-  const isMove        = pill.classList.contains("move-pill");
-  const isNearest     = isConvenience ||
-    pill.closest("#pill-grid-move-nearest") !== null;
-
-  document.getElementById("search-btn").innerHTML = isNearest
-    ? "📍 Find the Nearest"
-    : (isMove ? "🏠 Find for My Move" : "🐝 Scout the Hive");
+  const isNearestMove = !!pill.closest("#pill-grid-move-nearest");
+  document.getElementById("search-btn").innerHTML =
+    (isConvenience || isNearestMove) ? "📍 Find the Nearest" :
+    (currentMode === "move")         ? "🏠 Find for My Move" :
+                                       "🐝 Scout the Hive";
 });
-
-// ── Affiliate pill handler (Switch & Save) ────────────────────
-function handleAffiliatePill(type) {
-  const urls = {
-    broadband: "https://www.uswitch.com/broadband/",
-    energy:    "https://www.uswitch.com/gas-electricity/",
-    insurance: "https://www.comparethemarket.com/home-insurance/",
-  };
-  const url = urls[type];
-  if (url) window.open(url, "_blank", "noopener");
-}
 
 document.getElementById("query-input").addEventListener("input", () => {
   document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
