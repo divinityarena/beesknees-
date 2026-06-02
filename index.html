@@ -279,9 +279,93 @@
 
     .pill-group-label.best  { color: var(--deep-honey); }
     .pill-group-label.near  { color: #5A8A6A; }
-    .pill-group-label.move  { color: #4A6FA5; }
+    .pill-group-label.move    { color: #4A6FA5; }
+    .pill-group-label.wedding { color: #9B4F8E; }
+    .pill-group-label.baby    { color: #E8833A; }
+    .pill-group-label.sports  { color: #2E8B4A; }
 
-    /* ── Mode Toggle ─────────────────────────────────────── */
+    /* ── Life Events drawer ──────────────────────────────── */
+    .life-events-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      width: 100%;
+      padding: 0.6rem 1rem;
+      margin-bottom: 0.6rem;
+      background: var(--comb-dark);
+      border: 1.5px solid var(--comb-mid);
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--soft);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .life-events-btn:hover { background: var(--comb-mid); color: var(--dark); }
+    .life-events-btn .chevron { transition: transform 0.25s; display: inline-block; }
+    .life-events-btn.open .chevron { transform: rotate(180deg); }
+
+    .life-events-drawer {
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      animation: slideDown 0.2s ease;
+    }
+    .life-events-drawer.open { display: flex; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .event-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.8rem 1rem;
+      border-radius: 14px;
+      border: 1.5px solid var(--comb-mid);
+      background: var(--comb-dark);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .event-card:hover { border-color: var(--deep-honey); background: var(--comb-mid); }
+    .event-card.active { border-color: currentColor; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .event-card .event-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .event-card .event-text { flex: 1; }
+    .event-card .event-title { font-size: 0.88rem; font-weight: 700; color: var(--dark); line-height: 1.3; }
+    .event-card .event-sub   { font-size: 0.73rem; color: var(--soft); line-height: 1.4; }
+    .event-card[data-event="move"].active     { color: #2E5FA3; border-color: #4A6FA5; }
+    .event-card[data-event="wedding"].active  { color: #9B4F8E; border-color: #9B4F8E; }
+    .event-card[data-event="baby"].active     { color: #E8833A; border-color: #E8833A; }
+    .event-card[data-event="sports"].active   { color: #2E8B4A; border-color: #2E8B4A; }
+
+    /* Event sections */
+    .event-section { display: none; }
+    .event-section.visible { display: block; }
+
+    /* Wedding pills */
+    .pill.wedding-pill { border-color: #E8B4DF; color: #7A2E6E; }
+    .pill.wedding-pill:hover { background: #FBF0FA; border-color: #9B4F8E; color: #5A1A5A; }
+    .pill.wedding-pill.active { background: linear-gradient(145deg,#9B4F8E,#6B2060); border-color: #6B2060; color: white; }
+    .pill-group-label.wedding::after { background: #E8B4DF; }
+
+    /* Baby pills */
+    .pill.baby-pill { border-color: #F5C9A0; color: #8B4513; }
+    .pill.baby-pill:hover { background: #FFF5EC; border-color: #E8833A; color: #6B3010; }
+    .pill.baby-pill.active { background: linear-gradient(145deg,#E8833A,#C05A20); border-color: #C05A20; color: white; }
+    .pill-group-label.baby::after { background: #F5C9A0; }
+
+    /* Sports pills */
+    .pill.sports-pill { border-color: #A8D5B8; color: #1A5C30; }
+    .pill.sports-pill:hover { background: #EEF8F2; border-color: #2E8B4A; color: #0F3D20; }
+    .pill.sports-pill.active { background: linear-gradient(145deg,#2E8B4A,#1A5C30); border-color: #1A5C30; color: white; }
+    .pill-group-label.sports::after { background: #A8D5B8; }
+
+    /* Mode Toggle ──────────────────────────────────────────── */
     .mode-toggle {
       display: flex;
       background: var(--comb-dark);
@@ -1148,7 +1232,6 @@
 
   <nav style="display:flex; justify-content:flex-end; gap:0.5rem; margin-bottom:0.75rem; align-items:center;">
     <button class="auth-btn" id="auth-btn">🐝 Register / Sign In</button>
-    <a href="/about#advertise" class="nav-pill">📣 Advertise</a>
     <a href="/about" class="nav-pill">🐝 Hive Info</a>
   </nav>
 
@@ -1206,137 +1289,180 @@
       <input type="text" id="query-input" placeholder="e.g. Pizza, Chinese, Indian, Coffee…" />
     </div>
 
-    <!-- ── Mode Toggle ── -->
-    <div class="mode-toggle" id="mode-toggle" role="tablist" aria-label="App mode">
-      <button class="mode-btn explore active" data-mode="explore" role="tab" aria-selected="true">
-        🐝 <span>Explore</span>
-      </button>
-      <button class="mode-btn move" data-mode="move" role="tab" aria-selected="false">
-        🏠 <span>HomeMover</span>
-      </button>
-    </div>
+    <!-- ── Explore pills (always visible) ── -->
+    <div id="explore-section">
+      <div class="pill-group-label best">🏆 Find the <strong style="color:var(--deep-honey);font-weight:900;font-size:0.85rem;letter-spacing:-0.01em;text-transform:uppercase;">Best</strong></div>
+      <div class="pill-grid" id="pill-grid">
+        <button class="pill" data-query="restaurant dining"><span class="icon">🍽️</span>Restaurant</button>
+        <button class="pill" data-query="pub bar"><span class="icon">🍺</span>Pub</button>
+        <button class="pill" data-query="cafe coffee shop"><span class="icon">☕</span>Cafe</button>
+        <button class="pill" data-query="takeaway food"><span class="icon">🥡</span>Takeaway</button>
+        <button class="pill" data-query="dessert ice cream bakery sweet"><span class="icon">🍦</span>Dessert</button>
+        <button class="pill" data-query="tourist attraction sightseeing"><span class="icon">🏛️</span>Attraction</button>
+        <button class="pill" data-query="park nature walk"><span class="icon">🌳</span>Park</button>
+        <button class="pill" data-query="hotel accommodation"><span class="icon">🏨</span>Hotel</button>
+        <button class="pill" data-query="car mechanic garage"><span class="icon">🔧</span>Mechanic</button>
+        <button class="pill" data-query="dog sitter pet care"><span class="icon">🐕</span>Dog Sitter</button>
+        <button class="pill" data-query="grocery store local shop supermarket"><span class="icon">🛒</span>Local Shop</button>
+      </div>
 
-    <!-- ── Explore Mode ── -->
-    <div class="explore-section">
-
-    <!-- Best Of -->
-    <div class="pill-group-label best">🏆 Find the Best</div>
-    <div class="pill-grid" id="pill-grid">
-      <button class="pill" data-query="restaurant dining">
-        <span class="icon">🍽️</span>Restaurant
-      </button>
-      <button class="pill" data-query="pub bar">
-        <span class="icon">🍺</span>Pub
-      </button>
-      <button class="pill" data-query="cafe coffee shop">
-        <span class="icon">☕</span>Cafe
-      </button>
-      <button class="pill" data-query="takeaway food">
-        <span class="icon">🥡</span>Takeaway
-      </button>
-      <button class="pill" data-query="dessert ice cream bakery sweet">
-        <span class="icon">🍦</span>Dessert
-      </button>
-      <button class="pill" data-query="tourist attraction sightseeing">
-        <span class="icon">🏛️</span>Attraction
-      </button>
-      <button class="pill" data-query="park nature walk">
-        <span class="icon">🌳</span>Park
-      </button>
-      <button class="pill" data-query="hotel accommodation">
-        <span class="icon">🏨</span>Hotel
-      </button>
-      <button class="pill" data-query="car mechanic garage">
-        <span class="icon">🔧</span>Mechanic
-      </button>
-      <button class="pill" data-query="dog sitter pet care">
-        <span class="icon">🐕</span>Dog Sitter
-      </button>
-      <button class="pill" data-query="grocery store local shop supermarket">
-        <span class="icon">🛒</span>Local Shop
-      </button>
-    </div>
-
-    <!-- Nearest -->
-    <div class="pill-group-label near">📍 Find the Nearest</div>
-    <div class="pill-grid" id="pill-grid-convenience">
-      <button class="pill convenience" data-query="pharmacy chemist">
-        <span class="icon">💊</span>Pharmacy
-      </button>
-      <button class="pill convenience" data-query="car parking">
-        <span class="icon">🅿️</span>Parking
-      </button>
-      <button class="pill convenience" data-query="bus stop train station transit">
-        <span class="icon">🚉</span>Transit
-      </button>
-    </div>
+      <div class="pill-group-label near">📍 Find the <strong style="color:#3a7a52;font-weight:900;font-size:0.85rem;letter-spacing:-0.01em;text-transform:uppercase;">Nearest</strong></div>
+      <div class="pill-grid" id="pill-grid-convenience">
+        <button class="pill convenience" data-query="pharmacy chemist"><span class="icon">💊</span>Pharmacy</button>
+        <button class="pill convenience" data-query="car parking"><span class="icon">🅿️</span>Parking</button>
+        <button class="pill convenience" data-query="bus stop train station transit"><span class="icon">🚉</span>Transit</button>
+      </div>
     </div><!-- /explore-section -->
 
-    <!-- ── HomeMover Mode ── -->
-    <div class="move-section">
-      <div style="background:linear-gradient(135deg,#EEF4FB,#E0ECF8);border:1px solid #B8CCE8;border-radius:16px;padding:1rem 1.1rem;margin-bottom:1rem;">
-        <p style="font-size:0.82rem;color:#2C4A7A;line-height:1.6;margin:0;">
-          <strong>Moving soon?</strong> Search for trusted local services in your new area — from solicitors and removal companies to GPs, schools and broadband. 🏡
-        </p>
+    <!-- ── Life Events button + drawer ── -->
+    <button class="life-events-btn" id="life-events-btn" aria-expanded="false">
+      ✨ Life Events <span class="chevron">▾</span>
+    </button>
+
+    <div class="life-events-drawer" id="life-events-drawer" role="region" aria-label="Life events">
+
+      <div class="event-card" data-event="move" role="button" tabindex="0">
+        <span class="event-icon">🏠</span>
+        <div class="event-text">
+          <div class="event-title">HomeMover</div>
+          <div class="event-sub">Solicitors, removals, GPs, schools, broadband &amp; more</div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--soft);">›</span>
       </div>
 
+      <div class="event-card" data-event="wedding" role="button" tabindex="0">
+        <span class="event-icon">💍</span>
+        <div class="event-text">
+          <div class="event-title">Getting Married</div>
+          <div class="event-sub">Venues, florists, photographers, caterers &amp; more</div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--soft);">›</span>
+      </div>
+
+      <div class="event-card" data-event="baby" role="button" tabindex="0">
+        <span class="event-icon">👶</span>
+        <div class="event-text">
+          <div class="event-title">Having a Baby</div>
+          <div class="event-sub">Nurseries, baby shops, GPs, midwives &amp; essentials</div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--soft);">›</span>
+      </div>
+
+      <div class="event-card" data-event="sports" role="button" tabindex="0">
+        <span class="event-icon">⚽</span>
+        <div class="event-text">
+          <div class="event-title">Sports &amp; Activities</div>
+          <div class="event-sub">5-a-side, gyms, pools, golf, tennis &amp; more</div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--soft);">›</span>
+      </div>
+
+    </div><!-- /life-events-drawer -->
+
+    <!-- ── HomeMover section ── -->
+    <div class="event-section" id="event-section-move">
+      <div style="background:linear-gradient(135deg,#EEF4FB,#E0ECF8);border:1px solid #B8CCE8;border-radius:16px;padding:0.9rem 1rem;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.6rem;">
+        <span style="font-size:1.2rem;">🏠</span>
+        <p style="font-size:0.82rem;color:#2C4A7A;line-height:1.5;margin:0;"><strong>HomeMover</strong> — find trusted local services in your new area.</p>
+        <button onclick="closeEventSection()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.9rem;color:#4A6FA5;">✕</button>
+      </div>
       <div class="pill-group-label move">🏡 Find the Best</div>
-      <div class="pill-grid" id="pill-grid-move-best">
-        <button class="pill move-pill" data-query="estate agent property">
-          <span class="icon">🏘️</span>Estate Agent
-        </button>
-        <button class="pill move-pill" data-query="solicitor conveyancing lawyer">
-          <span class="icon">⚖️</span>Solicitor
-        </button>
-        <button class="pill move-pill" data-query="mortgage broker financial advisor">
-          <span class="icon">💰</span>Mortgage
-        </button>
-        <button class="pill move-pill" data-query="removal company moving van">
-          <span class="icon">🚚</span>Removals
-        </button>
-        <button class="pill move-pill" data-query="storage unit self storage">
-          <span class="icon">📦</span>Storage
-        </button>
-        <button class="pill move-pill" data-query="interior design home furnishing">
-          <span class="icon">🛋️</span>Interiors
-        </button>
+      <div class="pill-grid">
+        <button class="pill move-pill" data-query="estate agent property"><span class="icon">🏘️</span>Estate Agent</button>
+        <button class="pill move-pill" data-query="solicitor conveyancing lawyer"><span class="icon">⚖️</span>Solicitor</button>
+        <button class="pill move-pill" data-query="mortgage broker financial advisor"><span class="icon">💰</span>Mortgage</button>
+        <button class="pill move-pill" data-query="removal company moving van"><span class="icon">🚚</span>Removals</button>
+        <button class="pill move-pill" data-query="storage unit self storage"><span class="icon">📦</span>Storage</button>
+        <button class="pill move-pill" data-query="interior design home furnishing"><span class="icon">🛋️</span>Interiors</button>
       </div>
-
       <div class="pill-group-label move">📍 Find the Nearest</div>
-      <div class="pill-grid" id="pill-grid-move-nearest">
-        <button class="pill move-pill" data-query="GP doctor surgery health centre">
-          <span class="icon">🩺</span>GP / Doctor
-        </button>
-        <button class="pill move-pill" data-query="dentist dental practice">
-          <span class="icon">🦷</span>Dentist
-        </button>
-        <button class="pill move-pill" data-query="primary school secondary school">
-          <span class="icon">🏫</span>School
-        </button>
-        <button class="pill move-pill" data-query="pharmacy chemist">
-          <span class="icon">💊</span>Pharmacy
-        </button>
-        <button class="pill move-pill" data-query="supermarket grocery store">
-          <span class="icon">🛒</span>Supermarket
-        </button>
-        <button class="pill move-pill" data-query="park nature walk green space">
-          <span class="icon">🌳</span>Park
-        </button>
+      <div class="pill-grid">
+        <button class="pill move-pill" data-query="GP doctor surgery health centre"><span class="icon">🩺</span>GP / Doctor</button>
+        <button class="pill move-pill" data-query="dentist dental practice"><span class="icon">🦷</span>Dentist</button>
+        <button class="pill move-pill" data-query="primary school secondary school"><span class="icon">🏫</span>School</button>
+        <button class="pill move-pill" data-query="pharmacy chemist"><span class="icon">💊</span>Pharmacy</button>
+        <button class="pill move-pill" data-query="supermarket grocery store"><span class="icon">🛒</span>Supermarket</button>
+        <button class="pill move-pill" data-query="park nature walk green space"><span class="icon">🌳</span>Park</button>
       </div>
-
       <div class="pill-group-label move">🔌 Switch &amp; Save</div>
-      <div class="pill-grid" id="pill-grid-move-switch">
-        <button class="pill move-pill" data-affiliate="broadband">
-          <span class="icon">📡</span>Broadband
-        </button>
-        <button class="pill move-pill" data-affiliate="energy">
-          <span class="icon">⚡</span>Energy
-        </button>
-        <button class="pill move-pill" data-affiliate="insurance">
-          <span class="icon">🛡️</span>Insurance
-        </button>
+      <div class="pill-grid">
+        <button class="pill move-pill" data-affiliate="broadband"><span class="icon">📡</span>Broadband</button>
+        <button class="pill move-pill" data-affiliate="energy"><span class="icon">⚡</span>Energy</button>
+        <button class="pill move-pill" data-affiliate="insurance"><span class="icon">🛡️</span>Insurance</button>
       </div>
-    </div><!-- /move-section -->
+    </div><!-- /event-section-move -->
+
+    <!-- ── Getting Married section ── -->
+    <div class="event-section" id="event-section-wedding">
+      <div style="background:linear-gradient(135deg,#FDF0FC,#F5E0F8);border:1px solid #E8B4DF;border-radius:16px;padding:0.9rem 1rem;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.6rem;">
+        <span style="font-size:1.2rem;">💍</span>
+        <p style="font-size:0.82rem;color:#7A2E6E;line-height:1.5;margin:0;"><strong>Getting Married</strong> — find everything you need for the big day.</p>
+        <button onclick="closeEventSection()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.9rem;color:#9B4F8E;">✕</button>
+      </div>
+      <div class="pill-group-label wedding">💍 Venues &amp; Suppliers</div>
+      <div class="pill-grid">
+        <button class="pill wedding-pill" data-query="wedding venue function room"><span class="icon">🏰</span>Venue</button>
+        <button class="pill wedding-pill" data-query="florist flower shop"><span class="icon">💐</span>Florist</button>
+        <button class="pill wedding-pill" data-query="wedding photographer photography"><span class="icon">📸</span>Photographer</button>
+        <button class="pill wedding-pill" data-query="wedding catering caterer"><span class="icon">🍽️</span>Catering</button>
+        <button class="pill wedding-pill" data-query="bridal shop wedding dress"><span class="icon">👗</span>Bridal Shop</button>
+        <button class="pill wedding-pill" data-query="wedding cake bakery"><span class="icon">🎂</span>Wedding Cake</button>
+        <button class="pill wedding-pill" data-query="hair salon beauty wedding"><span class="icon">💇</span>Hair &amp; Beauty</button>
+        <button class="pill wedding-pill" data-query="wedding band music entertainment"><span class="icon">🎵</span>Music &amp; Band</button>
+      </div>
+      <div class="pill-group-label wedding">🔌 Plan &amp; Save</div>
+      <div class="pill-grid">
+        <button class="pill wedding-pill" data-affiliate="wedding-insurance"><span class="icon">🛡️</span>Wedding Insurance</button>
+        <button class="pill wedding-pill" data-affiliate="honeymoon"><span class="icon">✈️</span>Honeymoon</button>
+      </div>
+    </div><!-- /event-section-wedding -->
+
+    <!-- ── Having a Baby section ── -->
+    <div class="event-section" id="event-section-baby">
+      <div style="background:linear-gradient(135deg,#FFF5EC,#FFE8D0);border:1px solid #F5C9A0;border-radius:16px;padding:0.9rem 1rem;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.6rem;">
+        <span style="font-size:1.2rem;">👶</span>
+        <p style="font-size:0.82rem;color:#8B4513;line-height:1.5;margin:0;"><strong>Having a Baby</strong> — everything you need close to home.</p>
+        <button onclick="closeEventSection()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.9rem;color:#E8833A;">✕</button>
+      </div>
+      <div class="pill-group-label baby">👶 Find the Best</div>
+      <div class="pill-grid">
+        <button class="pill baby-pill" data-query="nursery childcare day nursery"><span class="icon">🏫</span>Nursery</button>
+        <button class="pill baby-pill" data-query="baby shop children clothes toys"><span class="icon">🧸</span>Baby Shop</button>
+        <button class="pill baby-pill" data-query="maternity clothes shop"><span class="icon">👚</span>Maternity</button>
+        <button class="pill baby-pill" data-query="baby swimming classes"><span class="icon">🏊</span>Baby Swimming</button>
+        <button class="pill baby-pill" data-query="soft play children play centre"><span class="icon">🎪</span>Soft Play</button>
+        <button class="pill baby-pill" data-query="children park playground"><span class="icon">🌳</span>Playground</button>
+      </div>
+      <div class="pill-group-label baby">📍 Find the Nearest</div>
+      <div class="pill-grid">
+        <button class="pill baby-pill" data-query="GP doctor surgery health centre"><span class="icon">🩺</span>GP / Doctor</button>
+        <button class="pill baby-pill" data-query="hospital maternity unit"><span class="icon">🏥</span>Hospital</button>
+        <button class="pill baby-pill" data-query="pharmacy chemist"><span class="icon">💊</span>Pharmacy</button>
+        <button class="pill baby-pill" data-query="supermarket grocery store"><span class="icon">🛒</span>Supermarket</button>
+      </div>
+    </div><!-- /event-section-baby -->
+
+    <!-- ── Sports & Activities section ── -->
+    <div class="event-section" id="event-section-sports">
+      <div style="background:linear-gradient(135deg,#EEF8F2,#D8F0E4);border:1px solid #A8D5B8;border-radius:16px;padding:0.9rem 1rem;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.6rem;">
+        <span style="font-size:1.2rem;">⚽</span>
+        <p style="font-size:0.82rem;color:#1A5C30;line-height:1.5;margin:0;"><strong>Sports &amp; Activities</strong> — find pitches, courts, pools and gyms nearby.</p>
+        <button onclick="closeEventSection()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.9rem;color:#2E8B4A;">✕</button>
+      </div>
+      <div class="pill-group-label sports">⚽ Find the Best</div>
+      <div class="pill-grid">
+        <button class="pill sports-pill" data-query="5 a side football pitch indoor football"><span class="icon">⚽</span>5-a-Side</button>
+        <button class="pill sports-pill" data-query="gym fitness centre health club"><span class="icon">🏋️</span>Gym</button>
+        <button class="pill sports-pill" data-query="swimming pool leisure centre"><span class="icon">🏊</span>Pool</button>
+        <button class="pill sports-pill" data-query="golf course golf club"><span class="icon">⛳</span>Golf</button>
+        <button class="pill sports-pill" data-query="tennis court tennis club"><span class="icon">🎾</span>Tennis</button>
+        <button class="pill sports-pill" data-query="rugby club rugby pitch"><span class="icon">🏉</span>Rugby</button>
+        <button class="pill sports-pill" data-query="GAA club gaelic games"><span class="icon">🥍</span>GAA</button>
+        <button class="pill sports-pill" data-query="boxing gym martial arts"><span class="icon">🥊</span>Boxing</button>
+        <button class="pill sports-pill" data-query="cycling route bike hire"><span class="icon">🚴</span>Cycling</button>
+        <button class="pill sports-pill" data-query="yoga pilates studio"><span class="icon">🧘</span>Yoga</button>
+      </div>
+    </div><!-- /event-section-sports -->
 
     <div class="divider">🍯 search radius</div>
 
@@ -1403,10 +1529,7 @@
        onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
       About Us &amp; Mission
     </a>
-    <a href="/about#advertise" style="font-size:0.78rem;font-weight:600;color:var(--deep-honey);text-decoration:none;opacity:0.8;transition:opacity 0.15s;"
-       onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-      📣 Advertise with Us
-    </a>
+
   </div>
   <div class="footer-copy">&copy; 2026 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
 </footer>
@@ -1464,46 +1587,84 @@ document.getElementById("gps-btn").addEventListener("click", () => {
   );
 });
 
-// ── Mode toggle ───────────────────────────────────────────────
-let currentMode = "explore";
-const appEl = document.querySelector(".app");
+// ── Life Events drawer ────────────────────────────────────────
+let activeEvent = null;
 
-document.getElementById("mode-toggle").addEventListener("click", (e) => {
-  const btn = e.target.closest(".mode-btn");
-  if (!btn) return;
-  const mode = btn.dataset.mode;
-  if (mode === currentMode) return;
-  currentMode = mode;
-  document.querySelectorAll(".mode-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.mode === mode);
-    b.setAttribute("aria-selected", b.dataset.mode === mode);
+document.getElementById("life-events-btn").addEventListener("click", () => {
+  const btn    = document.getElementById("life-events-btn");
+  const drawer = document.getElementById("life-events-drawer");
+  const isOpen = drawer.classList.contains("open");
+  drawer.classList.toggle("open", !isOpen);
+  btn.classList.toggle("open", !isOpen);
+  btn.setAttribute("aria-expanded", String(!isOpen));
+  if (isOpen && activeEvent) {
+    closeEventSection();
+  }
+});
+
+document.querySelectorAll(".event-card").forEach(card => {
+  card.addEventListener("click", () => openEventSection(card.dataset.event));
+  card.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") openEventSection(card.dataset.event);
   });
-  appEl.setAttribute("data-mode", mode);
+});
+
+function openEventSection(eventType) {
+  // Close any open section
+  document.querySelectorAll(".event-section").forEach(s => s.classList.remove("visible"));
+  document.querySelectorAll(".event-card").forEach(c => c.classList.remove("active"));
+
+  if (activeEvent === eventType) {
+    // Toggle off if same
+    activeEvent = null;
+    return;
+  }
+
+  activeEvent = eventType;
+  const section = document.getElementById("event-section-" + eventType);
+  const card    = document.querySelector(".event-card[data-event=" + eventType + "]");
+  if (section) section.classList.add("visible");
+  if (card)    card.classList.add("active");
+
+  // Reset pills and search btn
   document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
   selectedQuery = "";
   document.getElementById("query-input").value = "";
-  document.getElementById("query-input").placeholder = mode === "move"
-    ? "e.g. Solicitor, Removal Company, GP…"
-    : "e.g. Pizza, Chinese, Indian, Coffee…";
-  document.getElementById("search-btn").innerHTML = mode === "move"
-    ? "🏠 Find for My Move"
-    : "🐝 Scout the Hive";
-  appEl.style.transition = "opacity 0.15s";
-  appEl.style.opacity = "0.7";
-  setTimeout(() => { appEl.style.opacity = "1"; }, 150);
-});
 
-// ── Category pills ────────────────────────────────────────────
+  const labels = {
+    move:    "🏠 Find for My Move",
+    wedding: "💍 Find Wedding Services",
+    baby:    "👶 Find Baby Services",
+    sports:  "⚽ Find Sports & Activities",
+  };
+  document.getElementById("search-btn").innerHTML = labels[eventType] || "🐝 Scout the Hive";
+
+  // Scroll to section
+  setTimeout(() => section?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+}
+
+function closeEventSection() {
+  document.querySelectorAll(".event-section").forEach(s => s.classList.remove("visible"));
+  document.querySelectorAll(".event-card").forEach(c => c.classList.remove("active"));
+  activeEvent = null;
+  document.getElementById("search-btn").innerHTML = "🐝 Scout the Hive";
+  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  selectedQuery = "";
+}
+
+// ── Category pills ─────────────────────────────────────────────
 document.addEventListener("click", (e) => {
   const pill = e.target.closest(".pill");
-  if (!pill || !pill.closest(".pill-grid, [id^=pill-grid]")) return;
+  if (!pill) return;
 
-  // Affiliate pills — open comparison site
+  // Affiliate pills
   if (pill.dataset.affiliate) {
     const urls = {
-      broadband: "https://www.uswitch.com/broadband/",
-      energy:    "https://www.uswitch.com/gas-electricity/",
-      insurance: "https://www.comparethemarket.com/home-insurance/",
+      broadband:         "https://www.uswitch.com/broadband/",
+      energy:            "https://www.uswitch.com/gas-electricity/",
+      insurance:         "https://www.comparethemarket.com/home-insurance/",
+      "wedding-insurance": "https://www.comparethemarket.com/wedding-insurance/",
+      honeymoon:         "https://www.skyscanner.net/",
     };
     const url = urls[pill.dataset.affiliate];
     if (url) window.open(url, "_blank", "noopener");
@@ -1514,16 +1675,29 @@ document.addEventListener("click", (e) => {
   pill.classList.add("active");
   selectedQuery = pill.dataset.query;
   document.getElementById("query-input").value = "";
-  document.getElementById("query-input").placeholder =
-    pill.querySelector(".icon").textContent + " " +
-    pill.textContent.trim().replace(/^\S+\s*/, "");
+  const icon = pill.querySelector(".icon");
+  if (icon) {
+    document.getElementById("query-input").placeholder =
+      icon.textContent + " " + pill.textContent.trim().replace(/^\S+\s*/, "");
+  }
 
-  const isConvenience = pill.classList.contains("convenience");
-  const isNearestMove = !!pill.closest("#pill-grid-move-nearest");
-  document.getElementById("search-btn").innerHTML =
-    (isConvenience || isNearestMove) ? "📍 Find the Nearest" :
-    (currentMode === "move")         ? "🏠 Find for My Move" :
-                                       "🐝 Scout the Hive";
+  const isConvenience  = pill.classList.contains("convenience");
+  const isMoveNearest  = !!pill.closest("#event-section-move .pill-group-label.move + .pill-grid + .pill-group-label + .pill-grid");
+  const isBabyNearest  = !!pill.closest("#event-section-baby");
+  const eventLabels = {
+    move:    "🏠 Find for My Move",
+    wedding: "💍 Find Wedding Services",
+    baby:    "👶 Find Baby Services",
+    sports:  "⚽ Find Sports & Activities",
+  };
+
+  if (isConvenience) {
+    document.getElementById("search-btn").innerHTML = "📍 Find the Nearest";
+  } else if (activeEvent && eventLabels[activeEvent]) {
+    document.getElementById("search-btn").innerHTML = eventLabels[activeEvent];
+  } else {
+    document.getElementById("search-btn").innerHTML = "🐝 Scout the Hive";
+  }
 });
 
 document.getElementById("query-input").addEventListener("input", () => {
