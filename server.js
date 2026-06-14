@@ -13,6 +13,11 @@ const rateLimit        = require("express-rate-limit");
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// Render (and most cloud hosts) sit behind a reverse proxy.
+// This tells Express to trust the X-Forwarded-For header so
+// rate limiting works correctly per real IP address.
+app.set("trust proxy", 1);
+
 // ── API Keys (from environment variables only — never hardcode) ─
 const GOOGLE_API_KEY     = process.env.GOOGLE_API_KEY;
 const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
@@ -28,8 +33,12 @@ const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
   : null;
 if (supabase) {
   console.log("🐝 Supabase ready — waggle votes enabled");
+  console.log("   URL:", SUPABASE_URL);
+  console.log("   Key starts with:", (SUPABASE_SERVICE_KEY || "").slice(0, 12) + "...");
 } else {
   console.warn("⚠️  Missing SUPABASE_URL or SUPABASE_SERVICE_KEY — votes disabled");
+  console.warn("   SUPABASE_URL set:", !!SUPABASE_URL);
+  console.warn("   SUPABASE_SERVICE_KEY set:", !!SUPABASE_SERVICE_KEY);
 }
 
 // ── In-memory search cache (30 min TTL, max 500 entries) ──────
@@ -141,8 +150,10 @@ app.post("/vote", voteLimiter, async (req, res) => {
       .eq("place_id", place_id);
 
     if (countErr) throw new Error(countErr.message);
+    console.log(`🗳️  Vote recorded: "${place_name}" — total: ${count || 0}`);
     res.json({ success: true, total: count || 0 });
   } catch (e) {
+    console.error("Vote error:", e.message);
     res.status(500).json({ error: "Vote failed — please try again." });
   }
 });
@@ -349,7 +360,11 @@ async function fetchFoursquarePlaces({ lat, lng, query, radius }) {
   });
   const data = await res.json();
 
-  if (!res.ok) throw new Error(`Foursquare API: ${data.message || res.status}`);
+  if (!res.ok) {
+    console.warn(`⚠️  Foursquare error ${res.status}: ${data.message || JSON.stringify(data)}`);
+    console.warn(`    Key starts with: ${(FOURSQUARE_API_KEY || "").slice(0, 8)}...`);
+    throw new Error(`Foursquare API: ${data.message || res.status}`);
+  }
 
   return (data.results || []).map(p => ({
     source:          "foursquare",
