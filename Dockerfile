@@ -9,6 +9,7 @@ COPY server.js ./
 COPY index.html ./
 COPY about.html ./
 COPY profile.html ./
+COPY cookies.html ./
 
 EXPOSE 3000
 

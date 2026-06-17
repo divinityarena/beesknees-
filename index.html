@@ -1267,14 +1267,14 @@
 </div>
 
 <footer>
-  <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
+  <div class="footer-main">Powered by Google Places &nbsp;·&nbsp; The Bee's Knees 🐝</div>
   <div class="footer-nav" style="margin: 0.4rem 0;">
     <a href="/about" style="font-size:0.78rem; font-weight:600; color:var(--deep-honey); text-decoration:none; opacity:0.8; transition:opacity 0.15s;"
        onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
       About Us &amp; Mission
     </a>
   </div>
-  <div class="footer-copy">&copy; 2025 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
+  <div class="footer-copy">&copy; 2026 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland &nbsp;·&nbsp; <a href="/cookies" style="color:var(--deep-honey);text-decoration:none;opacity:0.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">Cookie Policy</a></div>
 </footer>
 
 <script>
@@ -1642,51 +1642,31 @@ async function castWaggle(placeId, placeName, btn) {
   if (voted[placeId]) return;
   btn.textContent = "🐝 Buzzing…";
   btn.disabled    = true;
-
   try {
+    // Use account ID if logged in, otherwise anonymous voter ID
     const voterId = currentUser ? currentUser.id : VOTER_ID;
-
-    const vres = await fetch(`${API_BASE}/vote`, {
+    const vres    = await fetch(`${API_BASE}/vote`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({
-        place_id:     placeId,
-        place_name:   placeName,
-        voter_id:     voterId,
-        search_query: selectedQuery || null,
-        area_lat:     userLat || null,
-        area_lng:     userLng || null,
-      }),
+      body:    JSON.stringify({ place_id: placeId, place_name: placeName, voter_id: voterId }),
     });
-
-    // Check content-type before parsing
-    const ct = vres.headers.get("content-type") || "";
-    if (!ct.includes("application/json")) throw new Error("Unexpected server response");
-
     const vdata = await vres.json();
-    if (!vres.ok) throw new Error(vdata.error || "Vote failed");
-
-    // Save to user_votes if logged in (profile history)
+    // Also save to Supabase if logged in
     if (sbClient && currentUser) {
-      try {
-        await sbClient.from("user_votes").upsert(
-          { user_id: currentUser.id, place_id: placeId, place_name: placeName },
-          { onConflict: "user_id,place_id" }
-        );
-      } catch(e) { console.warn("user_votes (non-critical):", e.message); }
+      await sbClient.from("user_votes").upsert(
+        { user_id: currentUser.id, place_id: placeId, place_name: placeName },
+        { onConflict: "user_id,place_id" }
+      );
     }
-
     voted[placeId] = true;
     try { localStorage.setItem("bk_voted", JSON.stringify(voted)); } catch(e) {}
-    updateWaggleUI(placeId, vdata.total ?? 1, true);
-    console.log("🐝 Vote cast for", placeName, "total:", vdata.total);
-
+    updateWaggleUI(placeId, vdata.total, true);
   } catch(e) {
-    console.error("Vote failed:", e.message);
-    btn.textContent = "🐝 This is the Bee\'s Knees!";
+    btn.textContent = "🐝 This is the Bee's Knees!";
     btn.disabled    = false;
   }
 }
+
 // ── Auto-load from shared URL ─────────────────────────────────
 (function loadFromUrl() {
   const params = new URLSearchParams(window.location.search);

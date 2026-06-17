@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cookie Policy — The Bee's Knees 🐝</title>
+  <meta name="description" content="Cookie and privacy policy for The Bee's Knees." />
+  <style>
+    :root {
+      --honey: #FFD470; --deep-honey: #C67C00; --amber: #F5A623;
+      --comb: #FFF8E7; --comb-dark: #FFF1CC;
+      --dark: #1A1000; --soft: #6B5B35; --white: #FFFFFF;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--comb); color: var(--dark); line-height: 1.7; min-height: 100vh; }
+    .nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: white; border-bottom: 2px solid var(--honey); position: sticky; top: 0; z-index: 10; }
+    .nav-logo { font-size: 1.1rem; font-weight: 800; color: var(--dark); text-decoration: none; }
+    .nav-back { font-size: 0.82rem; font-weight: 600; color: var(--deep-honey); text-decoration: none; padding: 0.4rem 0.9rem; border: 1.5px solid var(--honey); border-radius: 999px; background: white; transition: background 0.15s; }
+    .nav-back:hover { background: var(--comb-dark); }
+    .content { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+    .page-title { font-size: 2rem; font-weight: 900; color: var(--dark); margin-bottom: 0.4rem; }
+    .page-sub { font-size: 0.9rem; color: var(--soft); margin-bottom: 2.5rem; }
+    h2 { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin: 2rem 0 0.6rem; padding-bottom: 0.3rem; border-bottom: 1.5px solid var(--honey); }
+    p { margin-bottom: 0.9rem; font-size: 0.93rem; color: #3A2E10; }
+    ul { margin: 0.4rem 0 0.9rem 1.4rem; font-size: 0.93rem; color: #3A2E10; }
+    ul li { margin-bottom: 0.35rem; }
+    .highlight { background: var(--comb-dark); border-left: 3px solid var(--amber); border-radius: 0 10px 10px 0; padding: 0.9rem 1.1rem; margin: 1rem 0; font-size: 0.9rem; color: #5A3E00; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.88rem; }
+    th { background: var(--comb-dark); color: var(--deep-honey); text-align: left; padding: 0.6rem 0.8rem; font-weight: 700; border-bottom: 2px solid var(--honey); }
+    td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--honey); vertical-align: top; color: #3A2E10; }
+    tr:last-child td { border-bottom: none; }
+    code { background: var(--comb-dark); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85rem; }
+    a { color: var(--deep-honey); }
+    a:hover { text-decoration: underline; }
+    footer { text-align: center; padding: 2rem 1rem; font-size: 0.78rem; color: var(--soft); border-top: 1px solid var(--honey); margin-top: 2rem; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-logo">🐝 The Bee's Knees</a>
+    <a href="/" class="nav-back">🍯 Back to the Hive</a>
+  </nav>
+
+  <div class="content">
+    <h1 class="page-title">🍪 Cookie Policy</h1>
+    <p class="page-sub">Last updated: June 2026 &nbsp;·&nbsp; GoibniuDevs, Belfast</p>
+
+    <div class="highlight">
+      <strong>The short version:</strong> We use a small number of cookies and local storage
+      items to make the app work — saving your votes, remembering dismissed ads, and keeping
+      you signed in. We don't use advertising cookies or sell your data.
+    </div>
+
+    <h2>What are cookies?</h2>
+    <p>Cookies are small text files stored on your device when you visit a website. We also use
+    <strong>localStorage</strong> — a similar browser feature that stores data locally on your
+    device. Both make the app remember things so you don't have to.</p>
+
+    <h2>What we store and why</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Type</th><th>Purpose</th><th>Expires</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>bk_voter_id</code></td>
+          <td>localStorage</td>
+          <td>Anonymous ID so your waggle votes are counted once per device</td>
+          <td>Until cleared</td>
+        </tr>
+        <tr>
+          <td><code>bk_voted</code></td>
+          <td>localStorage</td>
+          <td>Which places you've voted for, so the button shows correctly</td>
+          <td>Until cleared</td>
+        </tr>
+        <tr>
+          <td><code>bk_ad_dismiss_*</code></td>
+          <td>localStorage</td>
+          <td>Records if you've dismissed a Local Buzz ad so it doesn't reappear for 24 hours</td>
+          <td>24 hours</td>
+        </tr>
+        <tr>
+          <td>Supabase auth token</td>
+          <td>localStorage / cookie</td>
+          <td>Keeps you signed in to your account if you've registered</td>
+          <td>Session / 1 year</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Third-party services</h2>
+    <ul>
+      <li><strong>Google Places API</strong> — powers our search results. Calls are made server-side so Google does not set cookies in your browser directly. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy →</a></li>
+      <li><strong>Supabase</strong> — handles user accounts and vote storage. <a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase Privacy Policy →</a></li>
+      <li><strong>Booking.com</strong> — hotel search links include an affiliate parameter. If you click through and book, Booking.com may set cookies on their site. <a href="https://www.booking.com/content/privacy.html" target="_blank" rel="noopener">Booking.com Privacy Policy →</a></li>
+      <li><strong>Formspree</strong> — handles contact and feedback forms. <a href="https://formspree.io/legal/privacy-policy/" target="_blank" rel="noopener">Formspree Privacy Policy →</a></li>
+    </ul>
+
+    <h2>What we don't do</h2>
+    <ul>
+      <li>We do not use advertising or tracking cookies</li>
+      <li>We do not sell or share your data with third parties for marketing</li>
+      <li>We do not use third-party analytics that track you across sites</li>
+      <li>We do not build profiles for targeted advertising</li>
+    </ul>
+
+    <h2>How to manage cookies</h2>
+    <p>You can clear localStorage and cookies at any time through your browser settings.
+    In most browsers: <strong>Settings → Privacy → Clear browsing data</strong>.</p>
+    <p>Clearing these will sign you out of your account and reset your vote history on
+    this device. Your votes remain in our database if you were signed in.</p>
+
+    <h2>Your rights (GDPR)</h2>
+    <p>If you're based in the EU or UK, you have the right to:</p>
+    <ul>
+      <li>Access the data we hold about you</li>
+      <li>Request deletion of your account and associated data</li>
+      <li>Object to processing of your personal data</li>
+      <li>Lodge a complaint with your national data protection authority (ICO in the UK, DPC in Ireland)</li>
+    </ul>
+    <p>To exercise any of these rights, use the feedback form on the main app or email
+    <a href="mailto:hello@beesknees.best">hello@beesknees.best</a>.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>We'll update this page if anything changes. The date at the top shows when it was last revised.</p>
+
+    <h2>Contact</h2>
+    <p>GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland<br />
+    <a href="mailto:hello@beesknees.best">hello@beesknees.best</a> &nbsp;·&nbsp;
+    <a href="/">beesknees.best</a></p>
+  </div>
+
+  <footer>
+    © 2026 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland &nbsp;·&nbsp;
+    <a href="/">Home</a> &nbsp;·&nbsp;
+    <a href="/about">About</a> &nbsp;·&nbsp;
+    <a href="/cookies">Cookie Policy</a>
+  </footer>
+
+</body>
+</html>

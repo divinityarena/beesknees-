@@ -20,10 +20,8 @@ app.set("trust proxy", 1);
 
 // ── API Keys (from environment variables only — never hardcode) ─
 const GOOGLE_API_KEY     = process.env.GOOGLE_API_KEY;
-const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
 
 if (!GOOGLE_API_KEY)     console.error("❌ Missing GOOGLE_API_KEY");
-if (!FOURSQUARE_API_KEY) console.error("❌ Missing FOURSQUARE_API_KEY");
 
 // ── Supabase client (server-side, uses service key) ──────────
 const SUPABASE_URL         = process.env.SUPABASE_URL;
@@ -115,6 +113,11 @@ app.get("/about.html", (_req, res) => {
 app.get("/profile", (_req, res) => {
   const p = path.join(HTML_DIR, "profile.html");
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("profile.html not found");
+});
+
+app.get("/cookies", (_req, res) => {
+  const p = path.join(HTML_DIR, "cookies.html");
+  fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("cookies.html not found");
 });
 
 // ── Health check ──────────────────────────────────────────────
@@ -256,59 +259,46 @@ app.get("/google-places", searchLimiter, async (req, res) => {
   try {
     console.log(`🔍 Searching: "${safeQuery}" @ ${(+lat).toFixed(3)},${(+lng).toFixed(3)} r=${radius}`);
 
-    const [googleResult, fsqResult] = await Promise.allSettled([
-      fetchGooglePlaces({ lat, lng, query: safeQuery, radius }),
-      fetchFoursquarePlaces({ lat, lng, query: safeQuery, radius }),
-    ]);
-
-    const google = googleResult.status === "fulfilled" ? googleResult.value : [];
-    const fsq    = fsqResult.status    === "fulfilled" ? fsqResult.value    : [];
-
-    if (googleResult.status === "rejected") console.warn("⚠️  Google failed:", googleResult.reason.message);
-    if (fsqResult.status    === "rejected") console.warn("⚠️  FSQ failed:",    fsqResult.reason.message);
-
-    console.log(`📊 Google: ${google.length} · Foursquare: ${fsq.length}`);
-
-    if (!google.length && !fsq.length) {
-      return res.json({ results: [], sources: { google: 0, foursquare: 0 } });
+    let google = [];
+    try {
+      google = await fetchGooglePlaces({ lat, lng, query: safeQuery, radius });
+    } catch (e) {
+      console.warn("⚠️  Google failed:", e.message);
     }
 
-    console.log("🔀 Merging results...");
-    const merged  = mergePlaces(google, fsq);
+    console.log(`📊 Google: ${google.length} results`);
 
-    console.log(`🗳️  Fetching vote counts for ${merged.length} places...`);
-    const voteMap = await fetchVoteCounts(merged.map(p => p.place_id).filter(Boolean));
+    if (!google.length) {
+      return res.json({ results: [], sources: { google: 0 } });
+    }
 
-    console.log("🏆 Ranking...");
-    const ranked  = rankAndLimit(merged, lat, lng, voteMap);
+    const voteMap = await fetchVoteCounts(google.map(p => p.place_id).filter(Boolean));
+    const ranked  = rankAndLimit(google, lat, lng, voteMap);
 
-    console.log("⏰ Fetching opening hours...");
     const withHours = await Promise.all(
       ranked.map(async (place) => {
-        if (!place.place_id || place.source === "foursquare") return place;
+        if (!place.place_id) return place;
         try {
           const hours = await fetchOpeningHours(place.place_id);
           return { ...place, ...hours };
         } catch (e) {
-          console.warn(`  Hours fetch failed for ${place.name}:`, e.message);
+          console.warn(`  Hours failed for ${place.name}:`, e.message);
           return place;
         }
       })
     );
 
-    const responseData = { results: withHours, sources: { google: google.length, foursquare: fsq.length } };
+    const responseData = { results: withHours, sources: { google: google.length } };
     setCache(cacheKey, responseData);
-    console.log(`✅ Done — returning ${withHours.length} results (cached, size: ${searchCache.size})`);
-
+    console.log(`✅ Done — returning ${withHours.length} results (cache size: ${searchCache.size})`);
     res.json(responseData);
 
   } catch (err) {
-    console.error("❌ Search handler threw:", err.message);
+    console.error("❌ Search error:", err.message);
     console.error(err.stack);
     res.status(500).json({ error: "Failed to fetch places. Please try again." });
   }
 });
-
 // ── Google Places Nearby Search ───────────────────────────────
 const FETCH_TIMEOUT_MS = 8000;
 function fetchWithTimeout(url, options = {}) {
@@ -346,40 +336,6 @@ async function fetchGooglePlaces({ lat, lng, query, radius }) {
   }));
 }
 
-// ── Foursquare Places Search ──────────────────────────────────
-async function fetchFoursquarePlaces({ lat, lng, query, radius }) {
-  const url = new URL("https://api.foursquare.com/v3/places/search");
-  url.searchParams.set("ll",     `${lat},${lng}`);
-  url.searchParams.set("radius", radius);
-  url.searchParams.set("query",  query);
-  url.searchParams.set("limit",  "50");
-  url.searchParams.set("fields", "fsq_id,name,geocodes,rating,stats,location,categories,price");
-
-  const res  = await fetchWithTimeout(url.toString(), {
-    headers: { Authorization: FOURSQUARE_API_KEY, Accept: "application/json" },
-  });
-  const data = await res.json();
-
-  if (!res.ok) {
-    console.warn(`⚠️  Foursquare error ${res.status}: ${data.message || JSON.stringify(data)}`);
-    console.warn(`    Key starts with: ${(FOURSQUARE_API_KEY || "").slice(0, 8)}...`);
-    throw new Error(`Foursquare API: ${data.message || res.status}`);
-  }
-
-  return (data.results || []).map(p => ({
-    source:          "foursquare",
-    name:            p.name,
-    normalised_name: normaliseName(p.name),
-    rating:          p.rating != null ? +(p.rating / 2).toFixed(1) : null,
-    review_count:    p.stats?.total_ratings ?? 0,
-    lat:             p.geocodes?.main?.latitude,
-    lng:             p.geocodes?.main?.longitude,
-    place_id:        p.fsq_id,
-    maps_url:        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + " " + (p.location?.formatted_address || ""))}`,
-    vicinity:        p.location?.formatted_address || "",
-    description:     buildFoursquareDescription(p),
-  }));
-}
 
 // ── Description Builders ──────────────────────────────────────
 function buildGoogleDescription(p) {
@@ -394,54 +350,10 @@ function buildGoogleDescription(p) {
   return parts.join(" — ") || null;
 }
 
-function buildFoursquareDescription(p) {
-  const parts = [];
-  const cat   = p.categories?.[0]?.name;
-  if (cat) parts.push(cat);
-  const addr  = p.location?.formatted_address;
-  if (addr) parts.push(addr.split(",")[0]);
-  if (p.price) {
-    const priceStr = ["","£","££","£££","££££"][p.price] || "";
-    if (priceStr) parts.push(priceStr);
-  }
-  return parts.join(" — ") || null;
-}
-
 function capitaliseWords(str) {
   return str.replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// ── Merge Google + Foursquare ─────────────────────────────────
-function mergePlaces(googlePlaces, fsqPlaces) {
-  const merged  = [];
-  const usedFsq = new Set();
-
-  for (const g of googlePlaces) {
-    const matchIdx = fsqPlaces.findIndex(
-      (f, i) => !usedFsq.has(i) && isSimilar(g.normalised_name, f.normalised_name)
-    );
-    if (matchIdx !== -1) {
-      const match = fsqPlaces[matchIdx];
-      usedFsq.add(matchIdx);
-      const combinedRating = (g.rating != null && match.rating != null)
-        ? +((g.rating + match.rating) / 2).toFixed(2)
-        : g.rating ?? match.rating;
-      merged.push({
-        ...g,
-        rating:       combinedRating,
-        review_count: g.review_count + match.review_count,
-        sources:      ["google", "foursquare"],
-        description:  g.description || match.description || null,
-      });
-    } else {
-      merged.push({ ...g, sources: ["google"] });
-    }
-  }
-  fsqPlaces.forEach((f, i) => {
-    if (!usedFsq.has(i)) merged.push({ ...f, sources: ["foursquare"] });
-  });
-  return merged;
-}
 
 function isSimilar(a, b) {
   if (a === b) return true;
@@ -463,18 +375,17 @@ function normaliseName(name) {
 const HIVE_SCORE_MAX = Math.pow(5.0, 3.0)
   * Math.log10(510)
   * (1 - (1 / Math.log10(510)))
-  * 1.05;
+  ;
 
 function confidence(reviews) {
   return 1 - (1 / Math.log10(reviews + 10));
 }
 
-function hiveScore(rating, reviews, dualSource, waggleVotes = 0) {
+function hiveScore(rating, reviews, waggleVotes = 0) {
   const base       = Math.pow(rating, 3.0)
                    * Math.log10(Math.min(reviews, 500) + 10)
                    * confidence(reviews);
-  const bonus      = dualSource ? 1.05 : 1.0;
-  const score      = (base * bonus / HIVE_SCORE_MAX) * 100;
+  const score      = (base / HIVE_SCORE_MAX) * 100;
   const wagglePts  = Math.min(waggleVotes * 3, 30); // each vote +3pts, max +30 (30%)
   return Math.min(Math.round((score + wagglePts) * 10) / 10, 100);
 }
@@ -505,7 +416,7 @@ function rankAndLimit(places, userLat, userLng, voteMap = {}) {
         waggle_votes: waggleVotes,
         maps_url:     p.maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((p.name || "") + " " + (p.vicinity || ""))}`,
         distance_km:  haversineKm(userLat, userLng, p.lat, p.lng),
-        hive_score:   hiveScore(p.rating, p.review_count || 0, p.sources?.length > 1, waggleVotes),
+        hive_score:   hiveScore(p.rating, p.review_count || 0, waggleVotes),
       };
     })
     .sort((a, b) => b.hive_score - a.hive_score);

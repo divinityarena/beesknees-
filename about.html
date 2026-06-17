@@ -328,14 +328,9 @@
   <!-- Nav -->
   <nav class="nav">
     <a href="/" class="nav-logo">🐝 The Bee's Knees</a>
-    <div style="display:flex;gap:0.5rem;align-items:center;">
-      <a href="#advertise" class="nav-back" style="font-size:0.8rem;padding:0.4rem 0.85rem;">
-        📣 Advertise
-      </a>
-      <a href="/" class="nav-back">
-        🍯 Back to the Hive
-      </a>
-    </div>
+    <a href="/" class="nav-back">
+      🍯 Back to the Hive
+    </a>
   </nav>
 
   <!-- Hero -->
@@ -421,34 +416,9 @@
       gets buried under noisier, less deserving competitors.
     </p>
     <p>
-      <strong>For tourism organisations &amp; businesses:</strong> We offer featured
-      placement and white-label partnerships. Your venue appears to people actively
-      searching nearby — ranked by quality, not marketing spend.
-    </p>
-  </div>
-
-  <!-- Advertiser contact card -->
-  <div class="card" id="advertise">
-    <span class="card-icon">📣</span>
-    <h2>Advertise with The Bee's Knees</h2>
-    <p style="margin-bottom:1.25rem;color:#5A3E00;line-height:1.6;">
-      Get your venue in front of people who are already searching nearby.
-      Introductory placements from <strong>£49/month</strong> — no long contracts,
-      cancel any time. Drop us your name and email and we'll be in touch.
-    </p>
-    <form id="advertiser-form" style="display:flex;flex-direction:column;gap:0.75rem;">
-      <input type="text"  id="adv-name"  placeholder="Your name"         required
-        style="padding:0.75rem 1rem;border-radius:10px;border:1.5px solid #FFD470;background:#FFFDF5;font-family:inherit;font-size:0.95rem;color:#1A1000;outline:none;width:100%;box-sizing:border-box;" />
-      <input type="email" id="adv-email" placeholder="Your email address" required
-        style="padding:0.75rem 1rem;border-radius:10px;border:1.5px solid #FFD470;background:#FFFDF5;font-family:inherit;font-size:0.95rem;color:#1A1000;outline:none;width:100%;box-sizing:border-box;" />
-      <button type="submit" id="adv-submit"
-        style="padding:0.8rem 1.5rem;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#F5A623,#C67C00);color:white;font-family:inherit;font-size:0.95rem;font-weight:600;box-shadow:0 4px 16px rgba(200,120,0,0.3);transition:opacity 0.2s;">
-        🐝 Get in touch
-      </button>
-      <p id="adv-status" style="font-size:0.85rem;text-align:center;min-height:1.2em;color:#2E7D52;"></p>
-    </form>
-    <p style="font-size:0.78rem;color:#9A7A3A;margin-top:0.75rem;text-align:center;">
-      No hard sell. We'll send you a quick overview and answer any questions.
+      <strong>For tourism organisations & businesses:</strong> We offer white-label
+      partnerships and featured placement opportunities. If you'd like to explore
+      working together, we'd love to hear from you.
     </p>
   </div>
 
@@ -477,47 +447,9 @@
 </div>
 
 <footer>
-  <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
-  <div class="footer-copy">&copy; 2026 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland</div>
+  <div class="footer-main">Powered by Google Places &nbsp;·&nbsp; The Bee's Knees 🐝</div>
+  <div class="footer-copy">&copy; 2026 GoibniuDevs &nbsp;·&nbsp; Belfast, Northern Ireland &nbsp;·&nbsp; <a href="/cookies" style="color:var(--deep-honey);text-decoration:none;opacity:0.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">Cookie Policy</a></div>
 </footer>
 
-<script>
-document.getElementById("advertiser-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const name   = document.getElementById("adv-name").value.trim();
-  const email  = document.getElementById("adv-email").value.trim();
-  const btn    = document.getElementById("adv-submit");
-  const status = document.getElementById("adv-status");
-  if (!name || !email) return;
-  btn.disabled = true;
-  btn.textContent = "Sending…";
-  status.textContent = "";
-  status.style.color = "#2E7D52";
-  try {
-    const res = await fetch("https://formspree.io/f/mbdznqed", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({
-        type:    "Advertiser Enquiry",
-        name,
-        email,
-        message: "New advertiser enquiry from " + name + " (" + email + ") via the Hive Info page.",
-      }),
-    });
-    if (res.ok) {
-      status.textContent = "✅ Got it! We'll be in touch shortly.";
-      document.getElementById("adv-name").value  = "";
-      document.getElementById("adv-email").value = "";
-      btn.textContent = "🐝 Sent!";
-      setTimeout(() => { btn.disabled = false; btn.textContent = "🐝 Get in touch"; }, 3000);
-    } else { throw new Error("failed"); }
-  } catch {
-    status.style.color = "#C0392B";
-    status.textContent = "Something went wrong — please try again.";
-    btn.disabled = false;
-    btn.textContent = "🐝 Get in touch";
-  }
-});
-</script>
 </body>
 </html>
