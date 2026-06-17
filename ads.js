@@ -18,7 +18,7 @@
 
 // ── Supabase Storage base URL ────────────────────────────────
 // Change this if your project URL ever changes
-const STORAGE = "https://hwpcowjejebhapgqhnpl.supabase.co/storage/v1/object/public/ads";
+const STORAGE = "https://hwpcowjejebhapgqhnpl.supabase.co/storage/v1/object/public/ads/ads";
 
 const AD_CONFIG = [
 
