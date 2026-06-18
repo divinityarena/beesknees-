@@ -10,6 +10,7 @@ COPY index.html ./
 COPY about.html ./
 COPY profile.html ./
 COPY cookies.html ./
+COPY ads.js ./
 
 EXPOSE 3000
 
