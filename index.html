@@ -291,8 +291,25 @@
       border: 1px solid rgba(255,210,100,0.3);
     }
     .local-buzz.visible { display: block; }
-    .buzz-img-wrap { position: relative; width: 100%; aspect-ratio: 2 / 1; overflow: hidden; background: #1A1000; }
-    .buzz-img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center center; display: block; }
+    .buzz-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 50%; /* 2:1 aspect ratio fallback — works everywhere */
+      overflow: hidden;
+      background: #1A1000;
+    }
+    @supports (aspect-ratio: 1) {
+      .buzz-img-wrap { height: auto; aspect-ratio: 2 / 1; padding-bottom: 0; }
+    }
+    .buzz-img-wrap img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      display: block;
+    }
     .buzz-img-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 2rem 1.25rem 1rem; background: linear-gradient(transparent 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.8) 100%); }
     .buzz-eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; color: #F5A623; text-transform: uppercase; margin-bottom: 0.3rem; }
     .buzz-headline { font-size: 1.25rem; font-weight: 800; color: white; line-height: 1.3; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
@@ -306,11 +323,64 @@
     .buzz-dismiss { position: absolute; top: 0.55rem; right: 0.55rem; z-index: 10; background: rgba(0,0,0,0.4); border: none; color: white; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px); transition: background 0.15s; }
     .buzz-dismiss:hover { background: rgba(0,0,0,0.65); }
     @media (max-width: 480px) {
-      .buzz-img-wrap { aspect-ratio: 3 / 2; }
+      .buzz-img-wrap { padding-bottom: 66.67%; }
       .buzz-headline { font-size: 1.1rem; }
     }
+    @media (max-width: 480px) and (min-resolution: 1dppx) {
+      @supports (aspect-ratio: 1) {
+        .buzz-img-wrap { aspect-ratio: 3 / 2; padding-bottom: 0; }
+      }
+    }
 
-    .pill-group-label.best  { color: var(--deep-honey); }
+    .pill-group-label.best     { color: var(--deep-honey); }
+    .pill-group-label.move     { color: #4A6FA5; }
+    .pill-group-label.wedding  { color: #9B4F8E; }
+    .pill-group-label.baby     { color: #E8833A; }
+    .pill-group-label.sports   { color: #2E8B4A; }
+
+    /* ── Life Events drawer ──────────────────────────────── */
+    .life-events-btn {
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      width: 100%; padding: 0.6rem 1rem; margin: 0.75rem 0 0.6rem;
+      background: var(--comb-dark); border: 1.5px solid var(--comb-mid);
+      border-radius: 999px; font-family: inherit; font-size: 0.82rem;
+      font-weight: 600; color: var(--soft); cursor: pointer; transition: all 0.2s;
+    }
+    .life-events-btn:hover { background: var(--comb-mid); color: var(--dark); }
+    .life-events-btn .chevron { transition: transform 0.25s; display: inline-block; }
+    .life-events-btn.open .chevron { transform: rotate(180deg); }
+    .life-events-drawer { display: none; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; animation: slideDown 0.2s ease; }
+    .life-events-drawer.open { display: flex; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .event-card {
+      display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem;
+      border-radius: 14px; border: 1.5px solid var(--comb-mid); background: var(--comb-dark);
+      cursor: pointer; transition: all 0.18s;
+    }
+    .event-card:hover { border-color: var(--deep-honey); background: var(--comb-mid); }
+    .event-card.active { border-color: currentColor; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .event-card .event-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .event-card .event-text { flex: 1; }
+    .event-card .event-title { font-size: 0.88rem; font-weight: 700; color: var(--dark); line-height: 1.3; }
+    .event-card .event-sub   { font-size: 0.73rem; color: var(--soft); line-height: 1.4; }
+    .event-card[data-event="move"].active     { color: #2E5FA3; border-color: #4A6FA5; }
+    .event-card[data-event="wedding"].active  { color: #9B4F8E; border-color: #9B4F8E; }
+    .event-card[data-event="baby"].active     { color: #E8833A; border-color: #E8833A; }
+    .event-card[data-event="sports"].active   { color: #2E8B4A; border-color: #2E8B4A; }
+    .event-section { display: none; }
+    .event-section.visible { display: block; }
+    .pill.move-pill    { border-color: #B8CCE8; color: #2C4A7A; }
+    .pill.move-pill:hover    { background: #EEF4FB; border-color: #4A6FA5; color: #1A3560; }
+    .pill.move-pill.active   { background: linear-gradient(145deg,#4A6FA5,#2C4A7A); border-color: #2C4A7A; color: white; }
+    .pill.wedding-pill  { border-color: #E8B4DF; color: #7A2E6E; }
+    .pill.wedding-pill:hover { background: #FBF0FA; border-color: #9B4F8E; color: #5A1A5A; }
+    .pill.wedding-pill.active{ background: linear-gradient(145deg,#9B4F8E,#6B2060); border-color: #6B2060; color: white; }
+    .pill.baby-pill     { border-color: #F5C9A0; color: #8B4513; }
+    .pill.baby-pill:hover    { background: #FFF5EC; border-color: #E8833A; color: #6B3010; }
+    .pill.baby-pill.active   { background: linear-gradient(145deg,#E8833A,#C05A20); border-color: #C05A20; color: white; }
+    .pill.sports-pill   { border-color: #A8D5B8; color: #1A5C30; }
+    .pill.sports-pill:hover  { background: #EEF8F2; border-color: #2E8B4A; color: #0F3D20; }
+    .pill.sports-pill.active { background: linear-gradient(145deg,#2E8B4A,#1A5C30); border-color: #1A5C30; color: white; }
     .pill-group-label.near  { color: #5A8A6A; }
 
     /* Convenience pills — slightly muted style */
@@ -1241,9 +1311,155 @@
       </button>
     </div>
 
+    <!-- ── Life Events button + drawer ── -->
+    <button class="life-events-btn" id="life-events-btn" aria-expanded="false">
+      ✨ Life Events <span class="chevron">▾</span>
+    </button>
+
+    <div class="life-events-drawer" id="life-events-drawer" role="region" aria-label="Life events">
+      <div class="event-card" data-event="move" role="button" tabindex="0">
+        <span class="event-icon">🏠</span>
+        <div class="event-text">
+          <div class="event-title">HomeMover</div>
+          <div class="event-sub">Solicitors, removals, GPs, schools, broadband &amp; more</div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--soft);">›</span>
+      </div>
+      <div class="event-card" data-event="wedding" role="button" tabindex="0">
+        <span class="event-icon">💍</span>
+        <div class="event-text">
+          <div class="event-title">Getting Married</div>
+          <div class="event-sub">Venues, florists, photographers, caterers &amp; more</div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--soft);">›</span>
+      </div>
+      <div class="event-card" data-event="baby" role="button" tabindex="0">
+        <span class="event-icon">👶</span>
+        <div class="event-text">
+          <div class="event-title">Having a Baby</div>
+          <div class="event-sub">Nurseries, baby shops, GPs, midwives &amp; essentials</div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--soft);">›</span>
+      </div>
+      <div class="event-card" data-event="sports" role="button" tabindex="0">
+        <span class="event-icon">⚽</span>
+        <div class="event-text">
+          <div class="event-title">Sports &amp; Activities</div>
+          <div class="event-sub">5-a-side, gyms, pools, golf, tennis &amp; more</div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--soft);">›</span>
+      </div>
+    </div>
+
+    <!-- ── HomeMover section ── -->
+    <div class="event-section" id="event-section-move">
+      <div style="background:linear-gradient(135deg,#EEF4FB,#E0ECF8);border:1px solid #B8CCE8;border-radius:16px;padding:0.9rem 1rem;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.6rem;">
+        <span style="font-size:1.2rem;">🏠</span>
+        <p style="font-size:0.82rem;color:#2C4A7A;line-height:1.5;margin:0;"><strong>HomeMover</strong> — find trusted local services in your new area.</p>
+        <button onclick="closeEventSection()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.9rem;color:#4A6FA5;">✕</button>
+      </div>
+      <div class="pill-group-label move">🏡 Find the Best</div>
+      <div class="pill-grid">
+        <button class="pill move-pill" data-query="estate agent property"><span class="icon">🏘️</span>Estate Agent</button>
+        <button class="pill move-pill" data-query="solicitor conveyancing lawyer"><span class="icon">⚖️</span>Solicitor</button>
+        <button class="pill move-pill" data-query="mortgage broker financial advisor"><span class="icon">💰</span>Mortgage</button>
+        <button class="pill move-pill" data-query="removal company moving van"><span class="icon">🚚</span>Removals</button>
+        <button class="pill move-pill" data-query="storage unit self storage"><span class="icon">📦</span>Storage</button>
+        <button class="pill move-pill" data-query="interior design home furnishing"><span class="icon">🛋️</span>Interiors</button>
+      </div>
+      <div class="pill-group-label move">📍 Find the Nearest</div>
+      <div class="pill-grid">
+        <button class="pill move-pill" data-query="GP doctor surgery health centre"><span class="icon">🩺</span>GP / Doctor</button>
+        <button class="pill move-pill" data-query="dentist dental practice"><span class="icon">🦷</span>Dentist</button>
+        <button class="pill move-pill" data-query="primary school secondary school"><span class="icon">🏫</span>School</button>
+        <button class="pill move-pill" data-query="pharmacy chemist"><span class="icon">💊</span>Pharmacy</button>
+        <button class="pill move-pill" data-query="supermarket grocery store"><span class="icon">🛒</span>Supermarket</button>
+        <button class="pill move-pill" data-query="park nature walk green space"><span class="icon">🌳</span>Park</button>
+      </div>
+      <div class="pill-group-label move">🔌 Switch &amp; Save</div>
+      <div class="pill-grid">
+        <button class="pill move-pill" data-affiliate="broadband"><span class="icon">📡</span>Broadband</button>
+        <button class="pill move-pill" data-affiliate="energy"><span class="icon">⚡</span>Energy</button>
+        <button class="pill move-pill" data-affiliate="insurance"><span class="icon">🛡️</span>Insurance</button>
+      </div>
+    </div>
+
+    <!-- ── Getting Married section ── -->
+    <div class="event-section" id="event-section-wedding">
+      <div style="background:linear-gradient(135deg,#FDF0FC,#F5E0F8);border:1px solid #E8B4DF;border-radius:16px;padding:0.9rem 1rem;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.6rem;">
+        <span style="font-size:1.2rem;">💍</span>
+        <p style="font-size:0.82rem;color:#7A2E6E;line-height:1.5;margin:0;"><strong>Getting Married</strong> — find everything you need for the big day.</p>
+        <button onclick="closeEventSection()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.9rem;color:#9B4F8E;">✕</button>
+      </div>
+      <div class="pill-group-label wedding">💍 Venues &amp; Suppliers</div>
+      <div class="pill-grid">
+        <button class="pill wedding-pill" data-query="wedding venue function room"><span class="icon">🏰</span>Venue</button>
+        <button class="pill wedding-pill" data-query="florist flower shop"><span class="icon">💐</span>Florist</button>
+        <button class="pill wedding-pill" data-query="wedding photographer photography"><span class="icon">📸</span>Photographer</button>
+        <button class="pill wedding-pill" data-query="wedding catering caterer"><span class="icon">🍽️</span>Catering</button>
+        <button class="pill wedding-pill" data-query="bridal shop wedding dress"><span class="icon">👗</span>Bridal Shop</button>
+        <button class="pill wedding-pill" data-query="wedding cake bakery"><span class="icon">🎂</span>Wedding Cake</button>
+        <button class="pill wedding-pill" data-query="hair salon beauty wedding"><span class="icon">💇</span>Hair &amp; Beauty</button>
+        <button class="pill wedding-pill" data-query="wedding band music entertainment"><span class="icon">🎵</span>Music &amp; Band</button>
+      </div>
+      <div class="pill-group-label wedding">🔌 Plan &amp; Save</div>
+      <div class="pill-grid">
+        <button class="pill wedding-pill" data-affiliate="wedding-insurance"><span class="icon">🛡️</span>Wedding Insurance</button>
+        <button class="pill wedding-pill" data-affiliate="honeymoon"><span class="icon">✈️</span>Honeymoon</button>
+      </div>
+    </div>
+
+    <!-- ── Having a Baby section ── -->
+    <div class="event-section" id="event-section-baby">
+      <div style="background:linear-gradient(135deg,#FFF5EC,#FFE8D0);border:1px solid #F5C9A0;border-radius:16px;padding:0.9rem 1rem;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.6rem;">
+        <span style="font-size:1.2rem;">👶</span>
+        <p style="font-size:0.82rem;color:#8B4513;line-height:1.5;margin:0;"><strong>Having a Baby</strong> — everything you need close to home.</p>
+        <button onclick="closeEventSection()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.9rem;color:#E8833A;">✕</button>
+      </div>
+      <div class="pill-group-label baby">👶 Find the Best</div>
+      <div class="pill-grid">
+        <button class="pill baby-pill" data-query="nursery childcare day nursery"><span class="icon">🏫</span>Nursery</button>
+        <button class="pill baby-pill" data-query="baby shop children clothes toys"><span class="icon">🧸</span>Baby Shop</button>
+        <button class="pill baby-pill" data-query="maternity clothes shop"><span class="icon">👚</span>Maternity</button>
+        <button class="pill baby-pill" data-query="baby swimming classes"><span class="icon">🏊</span>Baby Swimming</button>
+        <button class="pill baby-pill" data-query="soft play children play centre"><span class="icon">🎪</span>Soft Play</button>
+        <button class="pill baby-pill" data-query="children park playground"><span class="icon">🌳</span>Playground</button>
+      </div>
+      <div class="pill-group-label baby">📍 Find the Nearest</div>
+      <div class="pill-grid">
+        <button class="pill baby-pill" data-query="GP doctor surgery health centre"><span class="icon">🩺</span>GP / Doctor</button>
+        <button class="pill baby-pill" data-query="hospital maternity unit"><span class="icon">🏥</span>Hospital</button>
+        <button class="pill baby-pill" data-query="pharmacy chemist"><span class="icon">💊</span>Pharmacy</button>
+        <button class="pill baby-pill" data-query="supermarket grocery store"><span class="icon">🛒</span>Supermarket</button>
+      </div>
+    </div>
+
+    <!-- ── Sports & Activities section ── -->
+    <div class="event-section" id="event-section-sports">
+      <div style="background:linear-gradient(135deg,#EEF8F2,#D8F0E4);border:1px solid #A8D5B8;border-radius:16px;padding:0.9rem 1rem;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.6rem;">
+        <span style="font-size:1.2rem;">⚽</span>
+        <p style="font-size:0.82rem;color:#1A5C30;line-height:1.5;margin:0;"><strong>Sports &amp; Activities</strong> — find pitches, courts, pools and gyms nearby.</p>
+        <button onclick="closeEventSection()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:0.9rem;color:#2E8B4A;">✕</button>
+      </div>
+      <div class="pill-group-label sports">⚽ Find the Best</div>
+      <div class="pill-grid">
+        <button class="pill sports-pill" data-query="5 a side football pitch indoor football"><span class="icon">⚽</span>5-a-Side</button>
+        <button class="pill sports-pill" data-query="gym fitness centre health club"><span class="icon">🏋️</span>Gym</button>
+        <button class="pill sports-pill" data-query="swimming pool leisure centre"><span class="icon">🏊</span>Pool</button>
+        <button class="pill sports-pill" data-query="golf course golf club"><span class="icon">⛳</span>Golf</button>
+        <button class="pill sports-pill" data-query="tennis court tennis club"><span class="icon">🎾</span>Tennis</button>
+        <button class="pill sports-pill" data-query="rugby club rugby pitch"><span class="icon">🏉</span>Rugby</button>
+        <button class="pill sports-pill" data-query="GAA club gaelic games"><span class="icon">🥍</span>GAA</button>
+        <button class="pill sports-pill" data-query="boxing gym martial arts"><span class="icon">🥊</span>Boxing</button>
+        <button class="pill sports-pill" data-query="cycling route bike hire"><span class="icon">🚴</span>Cycling</button>
+        <button class="pill sports-pill" data-query="yoga pilates studio"><span class="icon">🧘</span>Yoga</button>
+      </div>
+    </div>
+
     <div class="divider">🍯 search radius</div>
 
     <div class="distance-row" id="dist-row">
+      <button class="dist-btn" data-radius="500">500 m</button>
       <button class="dist-btn" data-radius="1000">1 km</button>
       <button class="dist-btn active" data-radius="3000">3 km</button>
       <button class="dist-btn" data-radius="5000">5 km</button>
@@ -1320,7 +1536,7 @@
 </div>
 
 <footer>
-  <div class="footer-main">Powered by Google Places &amp; Foursquare &nbsp;·&nbsp; The Bee's Knees 🐝</div>
+  <div class="footer-main">Powered by Google Places &nbsp;·&nbsp; The Bee's Knees 🐝</div>
   <div class="footer-nav" style="margin: 0.4rem 0;">
     <a href="/about" style="font-size:0.78rem; font-weight:600; color:var(--deep-honey); text-decoration:none; opacity:0.8; transition:opacity 0.15s;"
        onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
@@ -1385,18 +1601,87 @@ document.getElementById("gps-btn").addEventListener("click", () => {
 });
 
 // ── Category pills ────────────────────────────────────────────
-document.querySelectorAll("#pill-grid, #pill-grid-convenience").forEach(grid => {
-  grid.addEventListener("click", (e) => {
-    const pill = e.target.closest(".pill");
-    if (!pill) return;
-    document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
-    pill.classList.add("active");
-    selectedQuery = pill.dataset.query;
-    document.getElementById("query-input").value = "";
-    document.getElementById("query-input").placeholder = pill.querySelector(".icon").textContent + " " + pill.textContent.trim().replace(/^\S+\s*/,"");
-    const isConvenience = pill.classList.contains("convenience");
-    document.getElementById("search-btn").innerHTML = isConvenience ? "📍 Find the Nearest" : "🐝 Scout the Hive";
-  });
+// ── Life Events drawer ────────────────────────────────────────
+let activeEvent = null;
+
+document.getElementById("life-events-btn").addEventListener("click", () => {
+  const btn    = document.getElementById("life-events-btn");
+  const drawer = document.getElementById("life-events-drawer");
+  const isOpen = drawer.classList.contains("open");
+  drawer.classList.toggle("open", !isOpen);
+  btn.classList.toggle("open", !isOpen);
+  btn.setAttribute("aria-expanded", String(!isOpen));
+  if (isOpen && activeEvent) closeEventSection();
+});
+
+document.querySelectorAll(".event-card").forEach(card => {
+  card.addEventListener("click", () => openEventSection(card.dataset.event));
+  card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") openEventSection(card.dataset.event); });
+});
+
+function openEventSection(eventType) {
+  document.querySelectorAll(".event-section").forEach(s => s.classList.remove("visible"));
+  document.querySelectorAll(".event-card").forEach(c => c.classList.remove("active"));
+  if (activeEvent === eventType) { activeEvent = null; return; }
+  activeEvent = eventType;
+  const section = document.getElementById("event-section-" + eventType);
+  const card    = document.querySelector('.event-card[data-event="' + eventType + '"]');
+  if (section) section.classList.add("visible");
+  if (card)    card.classList.add("active");
+  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  selectedQuery = "";
+  document.getElementById("query-input").value = "";
+  const labels = { move: "🏠 Find for My Move", wedding: "💍 Find Wedding Services", baby: "👶 Find Baby Services", sports: "⚽ Find Sports & Activities" };
+  document.getElementById("search-btn").innerHTML = labels[eventType] || "🐝 Scout the Hive";
+  setTimeout(() => section?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+}
+
+function closeEventSection() {
+  document.querySelectorAll(".event-section").forEach(s => s.classList.remove("visible"));
+  document.querySelectorAll(".event-card").forEach(c => c.classList.remove("active"));
+  activeEvent = null;
+  document.getElementById("search-btn").innerHTML = "🐝 Scout the Hive";
+  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  selectedQuery = "";
+}
+
+// ── Category pills (explore + all event sections) ─────────────
+document.addEventListener("click", (e) => {
+  const pill = e.target.closest(".pill");
+  if (!pill) return;
+
+  if (pill.dataset.affiliate) {
+    const urls = {
+      broadband: "https://www.uswitch.com/broadband/",
+      energy:    "https://www.uswitch.com/gas-electricity/",
+      insurance: "https://www.comparethemarket.com/home-insurance/",
+      "wedding-insurance": "https://www.comparethemarket.com/wedding-insurance/",
+      honeymoon: "https://www.skyscanner.net/",
+    };
+    const url = urls[pill.dataset.affiliate];
+    if (url) window.open(url, "_blank", "noopener");
+    return;
+  }
+
+  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  pill.classList.add("active");
+  selectedQuery = pill.dataset.query;
+  document.getElementById("query-input").value = "";
+  const icon = pill.querySelector(".icon");
+  if (icon) {
+    document.getElementById("query-input").placeholder = icon.textContent + " " + pill.textContent.trim().replace(/^\S+\s*/, "");
+  }
+
+  const isConvenience = pill.classList.contains("convenience");
+  const eventLabels = { move: "🏠 Find for My Move", wedding: "💍 Find Wedding Services", baby: "👶 Find Baby Services", sports: "⚽ Find Sports & Activities" };
+
+  if (isConvenience) {
+    document.getElementById("search-btn").innerHTML = "📍 Find the Nearest";
+  } else if (activeEvent && eventLabels[activeEvent]) {
+    document.getElementById("search-btn").innerHTML = eventLabels[activeEvent];
+  } else {
+    document.getElementById("search-btn").innerHTML = "🐝 Scout the Hive";
+  }
 });
 
 document.getElementById("query-input").addEventListener("input", () => {
@@ -1535,7 +1820,7 @@ function renderResults(rawPlaces, query) {
   heading.className = "results-heading";
   heading.innerHTML = `
     <h2>🏆 The Best ${capitalise(query)} Near You</h2>
-    <p>🍯 Top picks within ${(selectedRadius / 1000).toFixed(0)} km · Ranked by the hive</p>
+    <p>🍯 Top picks within ${selectedRadius < 1000 ? selectedRadius + " m" : (selectedRadius / 1000).toFixed(0) + " km"} · Ranked by the hive</p>
   `;
   resultsDiv.appendChild(heading);
 
