@@ -216,7 +216,9 @@ window.renderAd = function(ad) {
     img.alt = ad.headline;
     img.onerror = () => console.warn("🐝 Ad image failed to load:", ad.img);
     img.onload  = () => console.log("🐝 Ad image loaded:", ad.id);
-    img.src = ad.img;
+    // Clear src first, then set on next tick to ensure browser processes it fresh
+    img.src = "";
+    setTimeout(() => { img.src = ad.img; }, 0);
   }
   const eyebrow  = panel.querySelector(".buzz-eyebrow");
   const headline = panel.querySelector(".buzz-headline");
