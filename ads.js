@@ -16,9 +16,12 @@
 // To add a city:    add Tier 1 entry here + add city to BUZZ_SPOTS in index.html
 // ============================================================
 
-// ── Supabase Storage base URL ────────────────────────────────
-// Change this if your project URL ever changes
-const STORAGE = "https://hwpcowjejebhapgqhnpl.supabase.co/storage/v1/object/public/ads/ads";
+// ── Image base URL ───────────────────────────────────────────
+// Images are served via our own /img/ proxy on Render to avoid
+// Supabase Storage CORS restrictions on cross-origin img requests.
+// To add a new image: upload to Supabase Storage ads/ads/[path]
+// then reference it here as /img/[path]
+const STORAGE = "/img";
 
 const AD_CONFIG = [
 

@@ -120,6 +120,27 @@ app.get("/cookies", (_req, res) => {
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("cookies.html not found");
 });
 
+// ── Image proxy — serves Supabase Storage images from same origin ────────────
+// Bypasses CORS restrictions on Supabase Storage buckets
+const SUPABASE_STORAGE = "https://hwpcowjejebhapgqhnpl.supabase.co/storage/v1/object/public/ads";
+
+app.get("/img/*", async (req, res) => {
+  try {
+    const imgPath = req.params[0];
+    const url     = `${SUPABASE_STORAGE}/${imgPath}`;
+    const imgRes  = await fetchWithTimeout(url);
+    if (!imgRes.ok) return res.status(imgRes.status).send("Image not found");
+    const contentType = imgRes.headers.get("content-type") || "image/webp";
+    res.set("Content-Type", contentType);
+    res.set("Cache-Control", "public, max-age=86400"); // cache 24h
+    const buffer = await imgRes.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (e) {
+    console.warn("Image proxy error:", e.message);
+    res.status(500).send("Image fetch failed");
+  }
+});
+
 // ── Health check ──────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "🐝 The Bee's Knees server is buzzing!" });
