@@ -120,6 +120,123 @@ app.get("/cookies", (_req, res) => {
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("cookies.html not found");
 });
 
+// ── Nomination rate limiter (5 per user per day) ─────────────
+const nominationLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req) => req.body?.user_id || req.ip,
+  message: { error: "You've reached your 5 nominations for today — come back tomorrow! 🐝" },
+});
+
+// ── Find Place: POST /find-place ──────────────────────────────
+// Searches Google Places by name + location for the nomination flow
+app.post("/find-place", async (req, res) => {
+  const { name, lat, lng } = req.body;
+  if (!name || !lat || !lng) return res.status(400).json({ error: "Missing name, lat or lng" });
+  if (!GOOGLE_API_KEY) return res.status(503).json({ error: "Search unavailable" });
+
+  try {
+    const safeQuery = String(name).slice(0, 100).trim();
+    const url = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
+    url.searchParams.set("input",           safeQuery);
+    url.searchParams.set("inputtype",       "textquery");
+    url.searchParams.set("locationbias",    `circle:5000@${lat},${lng}`);
+    url.searchParams.set("fields",          "place_id,name,formatted_address,geometry,rating,user_ratings_total,photos");
+    url.searchParams.set("key",             GOOGLE_API_KEY);
+
+    const resp = await fetchWithTimeout(url.toString());
+    const data = await resp.json();
+
+    if (data.status === "ZERO_RESULTS" || !data.candidates?.length) {
+      return res.json({ found: false });
+    }
+
+    const p = data.candidates[0];
+    res.json({
+      found:     true,
+      place_id:  p.place_id,
+      name:      p.name,
+      address:   p.formatted_address,
+      rating:    p.rating || null,
+      reviews:   p.user_ratings_total || 0,
+      lat:       p.geometry?.location?.lat,
+      lng:       p.geometry?.location?.lng,
+      photo_ref: p.photos?.[0]?.photo_reference || null,
+    });
+  } catch (e) {
+    console.error("find-place error:", e.message);
+    res.status(500).json({ error: "Search failed — please try again." });
+  }
+});
+
+// ── Nominate: POST /nominate ──────────────────────────────────
+// Casts a waggle vote for a nominated place + logs the nomination
+app.post("/nominate", nominationLimiter, async (req, res) => {
+  const { place_id, place_name, user_id, search_query, area_lat, area_lng } = req.body;
+  if (!place_id || !user_id) return res.status(400).json({ error: "Missing place_id or user_id" });
+
+  const voter_hash = crypto.createHash("sha256").update(String(user_id)).digest("hex");
+
+  try {
+    if (!supabase) return res.status(503).json({ error: "Database not connected" });
+
+    // Cast waggle vote
+    const { error: voteErr } = await supabase
+      .from("waggle_votes")
+      .upsert({
+        place_id:     String(place_id).slice(0, 200),
+        place_name:   String(place_name || "Unknown").slice(0, 200),
+        voter_hash,
+        search_query: search_query ? String(search_query).slice(0, 100) : null,
+        area_lat:     area_lat ? +area_lat : null,
+        area_lng:     area_lng ? +area_lng : null,
+        nominated:    true,
+      }, { onConflict: "place_id,voter_hash", ignoreDuplicates: true });
+
+    if (voteErr) throw new Error(voteErr.message);
+
+    // Get updated vote count
+    const { count } = await supabase
+      .from("waggle_votes")
+      .select("*", { count: "exact", head: true })
+      .eq("place_id", place_id);
+
+    console.log(`🌟 Nomination: "${place_name}" by ${user_id.slice(0, 8)}... — total votes: ${count}`);
+    res.json({ success: true, total: count || 1 });
+
+  } catch (e) {
+    console.error("Nominate error:", e.message);
+    res.status(500).json({ error: "Nomination failed — please try again." });
+  }
+});
+
+// ── Manual Review: POST /manual-review ───────────────────────
+// Sends a manual review request to Formspree when place not found in Google
+const FORMSPREE_ID = process.env.FORMSPREE_ID || "mbdznqed";
+app.post("/manual-review", async (req, res) => {
+  const { business_name, address, city, user_email, search_query } = req.body;
+  if (!business_name) return res.status(400).json({ error: "Business name required" });
+
+  try {
+    const fRes = await fetchWithTimeout("https://formspree.io/f/" + FORMSPREE_ID, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        type:          "Manual Review Request",
+        business_name,
+        address:       address || "Not provided",
+        city:          city    || "Not provided",
+        search_query:  search_query || "Not provided",
+        submitted_by:  user_email || "Anonymous",
+      }),
+    });
+    if (!fRes.ok) throw new Error("Formspree error");
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Submission failed — please try again." });
+  }
+});
+
 // ── Health check ──────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "🐝 The Bee's Knees server is buzzing!" });
