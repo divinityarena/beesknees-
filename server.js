@@ -120,6 +120,14 @@ app.get("/cookies", (_req, res) => {
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("cookies.html not found");
 });
 
+// ── Fetch with timeout (8s) — used by all external API calls ──
+const FETCH_TIMEOUT_MS = 8000;
+function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 // ── Nomination rate limiter (5 per user per day) ─────────────
 const nominationLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
@@ -320,7 +328,7 @@ app.get("/geocode", geocodeLimiter, async (req, res) => {
 
   try {
     const url  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&region=${region}&key=${GOOGLE_API_KEY}`;
-    const resp = await fetch(url);
+    const resp = await fetchWithTimeout(url);
     const data = await resp.json();
 
     if (data.status === "OK" && data.results.length) {
@@ -337,7 +345,7 @@ app.get("/geocode", geocodeLimiter, async (req, res) => {
 
     // Fallback without region bias
     const url2  = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`;
-    const resp2 = await fetch(url2);
+    const resp2 = await fetchWithTimeout(url2);
     const data2 = await resp2.json();
 
     if (data2.status === "OK" && data2.results.length) {
@@ -417,12 +425,6 @@ app.get("/google-places", searchLimiter, async (req, res) => {
   }
 });
 // ── Google Places Nearby Search ───────────────────────────────
-const FETCH_TIMEOUT_MS = 8000;
-function fetchWithTimeout(url, options = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
-}
 
 async function fetchGooglePlaces({ lat, lng, query, radius }) {
   const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
@@ -488,7 +490,7 @@ function normaliseName(name) {
 // rating^3.0  — quality gaps are amplified (4.5★ meaningfully beats 4.4★)
 // cap at 500  — review count plateaus sooner, hidden gems surface faster
 // confidence  — penalises very low review counts
-// waggle boost — up to +5 points from user votes
+// waggle boost — up to +30 points from community votes (each vote = +3pts)
 const HIVE_SCORE_MAX = Math.pow(5.0, 3.0)
   * Math.log10(510)
   * (1 - (1 / Math.log10(510)))
