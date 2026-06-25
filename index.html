@@ -2361,7 +2361,7 @@ let nominationCandidate = null; // holds the found place data
 
 function toggleNominateForm() {
   if (!currentUser) {
-    showError("Please sign in to nominate a place — tap 🐝 Register / Sign In above.");
+    showAuthModal();
     return;
   }
   const form = document.getElementById("nominate-form");
@@ -2375,7 +2375,7 @@ function toggleNominateForm() {
 
 async function searchNomination() {
   if (!currentUser) {
-    showError("Please sign in to nominate a place.");
+    showAuthModal();
     return;
   }
   const input = document.getElementById("nominate-input");
@@ -2468,12 +2468,14 @@ async function confirmNomination() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Nomination failed");
 
-    // Save to user_votes too
+    // Save to user_votes too (non-critical — ignore errors)
     if (sbClient && currentUser) {
-      await sbClient.from("user_votes").upsert(
-        { user_id: currentUser.id, place_id: nominationCandidate.place_id, place_name: nominationCandidate.name },
-        { onConflict: "user_id,place_id" }
-      ).catch(() => {});
+      try {
+        await sbClient.from("user_votes").upsert(
+          { user_id: currentUser.id, place_id: nominationCandidate.place_id, place_name: nominationCandidate.name },
+          { onConflict: "user_id,place_id" }
+        );
+      } catch(e) { console.warn("user_votes save (non-critical):", e.message); }
     }
 
     status.innerHTML = `✅ <strong>${escHtml(nominationCandidate.name)}</strong> nominated! 

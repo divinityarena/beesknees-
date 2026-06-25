@@ -218,11 +218,10 @@ window.renderAd = function(ad) {
   const img = panel.querySelector(".buzz-img-wrap img");
   if (img) {
     img.alt = ad.headline;
+    // Set handlers before src to avoid race condition
     img.onerror = () => console.warn("🐝 Ad image failed to load:", ad.img);
     img.onload  = () => console.log("🐝 Ad image loaded:", ad.id);
-    // Clear src first, then set on next tick to ensure browser processes it fresh
-    img.src = "";
-    setTimeout(() => { img.src = ad.img; }, 0);
+    img.src = ad.img;
   }
   const eyebrow  = panel.querySelector(".buzz-eyebrow");
   const headline = panel.querySelector(".buzz-headline");
